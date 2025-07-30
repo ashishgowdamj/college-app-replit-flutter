@@ -4,7 +4,7 @@ interface AppHeaderProps {
   title?: string;
 }
 
-export default function AppHeader({ title = "College Duniya" }: AppHeaderProps) {
+export default function AppHeader({ title = "College Campus" }: AppHeaderProps) {
   return (
     <header className="bg-primary text-white px-4 py-3 shadow-lg sticky top-0 z-50">
       <div className="flex items-center justify-between">

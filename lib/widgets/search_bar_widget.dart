@@ -29,14 +29,35 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: TextField(
         controller: _controller,
         decoration: InputDecoration(
           hintText: 'Search colleges, courses, exams...',
-          prefixIcon: const Icon(Icons.search),
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 16,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: Theme.of(context).primaryColor,
+            size: 24,
+          ),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: Icon(
+                    Icons.clear_rounded,
+                    color: Colors.grey[600],
+                  ),
                   onPressed: () {
                     _controller.clear();
                     context.read<CollegeProvider>().updateSearchQuery('');
@@ -44,19 +65,30 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                   },
                 )
               : IconButton(
-                  icon: const Icon(Icons.tune),
+                  icon: Icon(
+                    Icons.tune_rounded,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   onPressed: () => _showFilterDialog(context),
                 ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+              width: 2,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.grey[50],
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
         onChanged: (value) {
           context.read<CollegeProvider>().updateSearchQuery(value);

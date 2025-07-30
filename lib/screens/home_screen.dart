@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'College Finder',
+          'College Campus',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,

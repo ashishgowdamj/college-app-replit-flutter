@@ -23,46 +23,78 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CollegeProvider()),
       ],
       child: MaterialApp.router(
-        title: 'College Comparison App',
+        title: 'College Campus',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: const Color(0xFF2563EB),
+          primarySwatch: Colors.indigo,
+          primaryColor: const Color(0xFF4F46E5),
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF2563EB),
+            seedColor: const Color(0xFF4F46E5),
             brightness: Brightness.light,
+            primary: const Color(0xFF4F46E5),
+            secondary: const Color(0xFF10B981),
+            surface: const Color(0xFFF8FAFC),
+            background: const Color(0xFFF1F5F9),
           ),
-
+          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
           useMaterial3: true,
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF2563EB),
+            backgroundColor: Color(0xFF4F46E5),
             foregroundColor: Colors.white,
             elevation: 0,
+            centerTitle: true,
+            titleTextStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
+              backgroundColor: const Color(0xFF4F46E5),
               foregroundColor: Colors.white,
-              elevation: 0,
+              elevation: 2,
+              shadowColor: const Color(0xFF4F46E5).withOpacity(0.3),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           cardTheme: CardTheme(
-            elevation: 2,
+            elevation: 3,
+            shadowColor: Colors.black.withOpacity(0.1),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
           inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF2563EB)),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          ),
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF4F46E5),
+            unselectedItemColor: Colors.grey.shade600,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            elevation: 8,
           ),
         ),
         routerConfig: _router,
