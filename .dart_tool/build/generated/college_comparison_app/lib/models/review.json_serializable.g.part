@@ -1,0 +1,31 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+Review _$ReviewFromJson(Map<String, dynamic> json) => Review(
+      id: (json['id'] as num).toInt(),
+      collegeId: (json['college_id'] as num?)?.toInt(),
+      studentName: json['student_name'] as String?,
+      course: json['course'] as String?,
+      graduationYear: (json['graduation_year'] as num?)?.toInt(),
+      rating: json['rating'] as String?,
+      title: json['title'] as String?,
+      content: json['content'] as String?,
+      likes: (json['likes'] as num?)?.toInt(),
+      verified: json['verified'] as bool?,
+      createdAt: json['created_at'] as String?,
+    );
+
+Map<String, dynamic> _$ReviewToJson(Review instance) => <String, dynamic>{
+      'id': instance.id,
+      'college_id': instance.collegeId,
+      'student_name': instance.studentName,
+      'course': instance.course,
+      'graduation_year': instance.graduationYear,
+      'rating': instance.rating,
+      'title': instance.title,
+      'content': instance.content,
+      'likes': instance.likes,
+      'verified': instance.verified,
+      'created_at': instance.createdAt,
+    };

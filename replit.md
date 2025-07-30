@@ -10,15 +10,19 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
+**MAJOR ARCHITECTURAL CHANGE - January 30, 2025**: The entire frontend has been converted from React to Flutter for native mobile and web support.
+
 The application follows a modern full-stack architecture with clear separation between client and server:
 
-### Frontend Architecture
-- **Framework**: React with TypeScript for type safety
-- **Routing**: Wouter for lightweight client-side routing
-- **Styling**: Tailwind CSS with shadcn/ui component library for consistent design
-- **State Management**: TanStack Query (React Query) for server state management
-- **Build Tool**: Vite for fast development and optimized production builds
-- **Mobile-First Design**: Responsive design optimized for mobile devices with a maximum width constraint
+### Frontend Architecture (Flutter)
+- **Framework**: Flutter for cross-platform mobile and web development
+- **Language**: Dart with strong typing and null safety
+- **Routing**: go_router for declarative routing and navigation
+- **State Management**: Provider pattern for reactive state management
+- **UI Components**: Material Design with custom components and animations
+- **HTTP Client**: Dio for robust API communication with interceptors
+- **Mobile-First Design**: Native mobile experience with responsive web support
+- **Platforms**: Android, iOS, and Web from a single codebase
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js framework
@@ -45,12 +49,23 @@ The application uses a comprehensive database schema with the following main ent
 5. **Comparisons**: Saved college comparisons for users
 6. **Users**: User management for personalization features
 
-### Frontend Components
-- **App Header**: Navigation header with notifications and user profile access
-- **Bottom Navigation**: Mobile-optimized bottom navigation for main app sections
-- **College Card**: Reusable component for displaying college information in lists
-- **Filter Modal**: Advanced filtering interface for college searches
-- **UI Components**: Comprehensive set of reusable UI components from shadcn/ui
+### Flutter App Structure
+- **Main App**: MaterialApp with go_router navigation and Provider state management
+- **Screens**: Five main screens - Home, Search, Favorites, Predictor, and Exams
+- **Widgets**: Reusable Flutter widgets including CollegeCard, SearchBar, and BottomNavigation
+- **Models**: Dart data models with JSON serialization for College, Course, Exam, and Review
+- **Services**: API service layer using Dio for HTTP communication with the Express backend
+- **Providers**: State management using Provider pattern for reactive UI updates
+
+### Recent Changes (January 30, 2025)
+- ✅ Complete conversion from React to Flutter framework
+- ✅ Implemented Dart data models with JSON serialization
+- ✅ Created API service layer using Dio HTTP client
+- ✅ Built comprehensive UI with Material Design components
+- ✅ Implemented state management using Provider pattern
+- ✅ Added navigation using go_router
+- ✅ Created all major screens: Home, Search, Favorites, Predictor, Exams
+- ✅ Maintained compatibility with existing Express.js backend
 
 ### API Endpoints
 - `/api/colleges` - College listing with filtering and search capabilities

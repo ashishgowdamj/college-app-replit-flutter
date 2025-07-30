@@ -1,0 +1,43 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+Exam _$ExamFromJson(Map<String, dynamic> json) => Exam(
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
+      fullName: json['full_name'] as String?,
+      type: json['type'] as String,
+      conductingBody: json['conducting_body'] as String?,
+      frequency: json['frequency'] as String?,
+      applicationStartDate: json['application_start_date'] as String?,
+      applicationEndDate: json['application_end_date'] as String?,
+      examDate: json['exam_date'] as String?,
+      resultDate: json['result_date'] as String?,
+      eligibility: json['eligibility'] as String?,
+      syllabus: json['syllabus'] as String?,
+      examPattern: json['exam_pattern'] as String?,
+      totalMarks: (json['total_marks'] as num?)?.toInt(),
+      duration: json['duration'] as String?,
+      website: json['website'] as String?,
+      createdAt: json['created_at'] as String?,
+    );
+
+Map<String, dynamic> _$ExamToJson(Exam instance) => <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'full_name': instance.fullName,
+      'type': instance.type,
+      'conducting_body': instance.conductingBody,
+      'frequency': instance.frequency,
+      'application_start_date': instance.applicationStartDate,
+      'application_end_date': instance.applicationEndDate,
+      'exam_date': instance.examDate,
+      'result_date': instance.resultDate,
+      'eligibility': instance.eligibility,
+      'syllabus': instance.syllabus,
+      'exam_pattern': instance.examPattern,
+      'total_marks': instance.totalMarks,
+      'duration': instance.duration,
+      'website': instance.website,
+      'created_at': instance.createdAt,
+    };

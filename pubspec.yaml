@@ -1,0 +1,52 @@
+name: college_comparison_app
+description: "A mobile-first college comparison and ranking platform for Indian higher education."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  
+  # HTTP and networking
+  http: ^1.1.0
+  dio: ^5.4.0
+  
+  # State management
+  provider: ^6.1.0
+  
+  # Navigation
+  go_router: ^13.2.0
+  
+  # UI components
+  cached_network_image: ^3.3.0
+  flutter_rating_bar: ^4.0.1
+  shimmer: ^3.0.0
+  flutter_staggered_grid_view: ^0.7.0
+  
+  # Data handling
+  json_annotation: ^4.8.1
+  
+  # Utilities
+  intl: ^0.19.0
+  url_launcher: ^6.2.2
+  share_plus: ^7.2.2
+  
+  # Storage
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  
+  # Code generation
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
