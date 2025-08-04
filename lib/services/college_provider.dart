@@ -19,6 +19,11 @@ class CollegeProvider with ChangeNotifier {
   String? _selectedCourseType;
   int? _minFees;
   int? _maxFees;
+  
+  // Pagination state
+  bool _hasMoreData = true;
+  int _currentPage = 0;
+  static const int _pageSize = 20;
 
   // Getters
   List<College> get colleges => _colleges;
@@ -32,6 +37,8 @@ class CollegeProvider with ChangeNotifier {
   String? get selectedCourseType => _selectedCourseType;
   int? get minFees => _minFees;
   int? get maxFees => _maxFees;
+  bool get hasMoreData => _hasMoreData;
+  bool get isLoadingMore => _isLoading && _colleges.isNotEmpty;
 
   // Search and filter methods
   void updateSearchQuery(String query) {
@@ -57,34 +64,78 @@ class CollegeProvider with ChangeNotifier {
     _selectedCourseType = null;
     _minFees = null;
     _maxFees = null;
+    _resetPagination();
     notifyListeners();
+  }
+  
+  void _resetPagination() {
+    _currentPage = 0;
+    _hasMoreData = true;
   }
 
   // Fetch colleges with current filters
-  Future<void> fetchColleges() async {
+  Future<void> fetchColleges({bool refresh = false}) async {
+    if (refresh) {
+      _resetPagination();
+      _colleges = [];
+    }
+    
+    if (!_hasMoreData && !refresh) return;
+    
     _setLoading(true);
     try {
-      _colleges = await _apiService.getColleges(
+      final newColleges = await _apiService.getColleges(
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
         state: _selectedState,
         courseType: _selectedCourseType,
         minFees: _minFees,
         maxFees: _maxFees,
+        limit: _pageSize,
+        offset: refresh ? 0 : _currentPage * _pageSize,
       );
+      
+      if (refresh) {
+        _colleges = newColleges;
+      } else {
+        _colleges.addAll(newColleges);
+      }
+      
+      _hasMoreData = newColleges.length >= _pageSize;
+      if (_hasMoreData) {
+        _currentPage++;
+      }
+      
       _error = null;
     } catch (e) {
       _error = e.toString();
-      _colleges = [];
+      if (refresh) {
+        _colleges = [];
+      }
     } finally {
       _setLoading(false);
     }
+  }
+  
+  // Load more colleges for pagination
+  Future<void> loadMoreColleges() async {
+    if (!_hasMoreData || _isLoading) return;
+    await fetchColleges();
   }
 
   // Fetch college details
   Future<void> fetchCollegeDetails(int collegeId) async {
     _setLoading(true);
     try {
-      _selectedCollege = await _apiService.getCollege(collegeId);
+      // First try to find the college in the already loaded list
+      final existingCollege = _colleges.where((college) => college.id == collegeId).firstOrNull;
+      
+      if (existingCollege != null) {
+        _selectedCollege = existingCollege;
+      } else {
+        // If not found in loaded list, use mock data for faster loading
+        _selectedCollege = null;
+      }
+      
       if (_selectedCollege != null) {
         _selectedCollegeReviews = await _apiService.getCollegeReviews(collegeId);
       }

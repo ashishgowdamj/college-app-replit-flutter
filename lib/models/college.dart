@@ -1,6 +1,29 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'college.g.dart';
+
+// Custom converter for Firebase Timestamp
+class TimestampConverter implements JsonConverter<String?, dynamic> {
+  const TimestampConverter();
+
+  @override
+  String? fromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is Timestamp) {
+      return json.toDate().toIso8601String();
+    }
+    if (json is String) {
+      return json;
+    }
+    return null;
+  }
+
+  @override
+  dynamic toJson(String? object) {
+    return object;
+  }
+}
 
 @JsonSerializable()
 class College {
@@ -44,6 +67,7 @@ class College {
   @JsonKey(name: 'has_hostel')
   final bool? hasHostel;
   @JsonKey(name: 'created_at')
+  @TimestampConverter()
   final String? createdAt;
 
   College({

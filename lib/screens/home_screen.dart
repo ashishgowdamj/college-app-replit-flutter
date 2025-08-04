@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CollegeProvider>().fetchColleges();
+      context.read<CollegeProvider>().fetchColleges(refresh: true);
     });
   }
 
@@ -27,9 +27,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'College Campus',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/app_logo.png',
+              height: 48,
+              width: 48,
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'College Campus',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         elevation: 0,

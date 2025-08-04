@@ -32,7 +32,7 @@ College _$CollegeFromJson(Map<String, dynamic> json) => College(
       highestPackage: json['highest_package'] as String?,
       hostelFees: json['hostel_fees'] as String?,
       hasHostel: json['has_hostel'] as bool?,
-      createdAt: json['created_at'] as String?,
+      createdAt: const TimestampConverter().fromJson(json['created_at']),
     );
 
 Map<String, dynamic> _$CollegeToJson(College instance) => <String, dynamic>{
@@ -61,5 +61,5 @@ Map<String, dynamic> _$CollegeToJson(College instance) => <String, dynamic>{
       'highest_package': instance.highestPackage,
       'hostel_fees': instance.hostelFees,
       'has_hostel': instance.hasHostel,
-      'created_at': instance.createdAt,
+      'created_at': const TimestampConverter().toJson(instance.createdAt),
     };

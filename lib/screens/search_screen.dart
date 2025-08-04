@@ -88,17 +88,37 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: provider.colleges.length,
-                  itemBuilder: (context, index) {
-                    final college = provider.colleges[index];
-                    return CollegeCard(
-                      college: college,
-                      isFavorite: provider.isFavorite(college),
-                      onTap: () => context.go('/college/${college.id}'),
-                      onFavoriteToggle: () => provider.toggleFavorite(college),
-                    );
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                      if (provider.hasMoreData && !provider.isLoadingMore) {
+                        provider.loadMoreColleges();
+                      }
+                    }
+                    return false;
                   },
+                  child: ListView.builder(
+                    itemCount: provider.colleges.length + (provider.hasMoreData ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == provider.colleges.length) {
+                        // Show loading indicator at the bottom
+                        return provider.isLoadingMore
+                            ? const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(child: CircularProgressIndicator()),
+                              )
+                            : const SizedBox.shrink();
+                      }
+                      
+                      final college = provider.colleges[index];
+                      return CollegeCard(
+                        college: college,
+                        isFavorite: provider.isFavorite(college),
+                        onTap: () => context.go('/college/${college.id}'),
+                        onFavoriteToggle: () => provider.toggleFavorite(college),
+                      );
+                    },
+                  ),
                 );
               },
             ),

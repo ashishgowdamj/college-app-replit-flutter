@@ -92,9 +92,15 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
         ),
         onChanged: (value) {
           context.read<CollegeProvider>().updateSearchQuery(value);
+          // Trigger search after a short delay to avoid too many requests
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && _controller.text == value) {
+              context.read<CollegeProvider>().fetchColleges(refresh: true);
+            }
+          });
         },
         onSubmitted: (value) {
-          context.read<CollegeProvider>().fetchColleges();
+          context.read<CollegeProvider>().fetchColleges(refresh: true);
         },
       ),
     );
@@ -303,7 +309,7 @@ class _FilterModalState extends State<FilterModal> {
                   minFees: feesRange!.start.round(),
                   maxFees: feesRange!.end.round(),
                 );
-                widget.provider.fetchColleges();
+                widget.provider.fetchColleges(refresh: true);
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(

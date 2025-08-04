@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,7 +30,10 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CollegeProvider>().fetchCollegeDetails(int.parse(widget.collegeId));
+      final collegeId = int.tryParse(widget.collegeId);
+      if (collegeId != null) {
+        context.read<CollegeProvider>().fetchCollegeDetails(collegeId);
+      }
     });
   }
 
@@ -44,15 +48,35 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     return Scaffold(
       body: Consumer<CollegeProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && provider.selectedCollege == null) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+          if (provider.isLoading) {
+            return Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/'),
+                ),
+              ),
+              body: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Loading college details...'),
+                  ],
+                ),
+              ),
             );
           }
 
           if (provider.error != null && provider.selectedCollege == null) {
             return Scaffold(
-              appBar: AppBar(),
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/'),
+                ),
+              ),
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -62,9 +86,12 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                     Text('Failed to load college details'),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => provider.fetchCollegeDetails(
-                        int.parse(widget.collegeId),
-                      ),
+                      onPressed: () {
+                        final collegeId = int.tryParse(widget.collegeId);
+                        if (collegeId != null) {
+                          provider.fetchCollegeDetails(collegeId);
+                        }
+                      },
                       child: const Text('Retry'),
                     ),
                   ],
@@ -73,7 +100,27 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             );
           }
 
-          final college = provider.selectedCollege!;
+          final college = provider.selectedCollege;
+          if (college == null) {
+            return Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/'),
+                ),
+              ),
+              body: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64),
+                    SizedBox(height: 16),
+                    Text('College not found'),
+                  ],
+                ),
+              ),
+            );
+          }
           return _buildCollegeDetails(context, college, provider);
         },
       ),
@@ -86,6 +133,10 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
         SliverAppBar(
           expandedHeight: 250,
           pinned: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => context.go('/'),
+          ),
           flexibleSpace: FlexibleSpaceBar(
             title: Text(
               college.shortName ?? college.name,
@@ -95,13 +146,19 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                 shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
               ),
             ),
-            background: college.imageUrl != null
+            background: college.imageUrl != null && college.imageUrl!.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: college.imageUrl!,
                     fit: BoxFit.cover,
                     errorWidget: (context, url, error) => Container(
                       color: Theme.of(context).primaryColor,
                       child: const Icon(Icons.school, size: 80, color: Colors.white),
+                    ),
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
                   )
                 : Container(
@@ -155,17 +212,22 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                     ),
                     const SizedBox(height: 8),
                     if (college.ratingAsDouble > 0) ...[
-                      Row(
-                        children: [
-                          RatingBarIndicator(
-                            rating: college.ratingAsDouble,
-                            itemBuilder: (context, index) => const Icon(
-                              Icons.star,
-                              color: Colors.amber,
+                                              Row(
+                          children: [
+                            RatingBar.builder(
+                              initialRating: college.ratingAsDouble,
+                              minRating: 1,
+                              direction: Axis.horizontal,
+                              allowHalfRating: true,
+                              itemCount: 5,
+                              itemSize: 20.0,
+                              ignoreGestures: true,
+                              onRatingUpdate: (rating) {},
+                              itemBuilder: (context, index) => const Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                              ),
                             ),
-                            itemCount: 5,
-                            itemSize: 20.0,
-                          ),
                           const SizedBox(width: 8),
                           Text(
                             '${college.ratingAsDouble.toStringAsFixed(1)} (${college.reviewCount ?? 0} reviews)',
@@ -423,14 +485,19 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               ],
             ),
             const SizedBox(height: 8),
-            RatingBarIndicator(
-              rating: review.ratingAsDouble,
+            RatingBar.builder(
+              initialRating: review.ratingAsDouble,
+              minRating: 1,
+              direction: Axis.horizontal,
+              allowHalfRating: true,
+              itemCount: 5,
+              itemSize: 16.0,
+              ignoreGestures: true,
+              onRatingUpdate: (rating) {},
               itemBuilder: (context, index) => const Icon(
                 Icons.star,
                 color: Colors.amber,
               ),
-              itemCount: 5,
-              itemSize: 16.0,
             ),
             if (review.title != null) ...[
               const SizedBox(height: 8),
