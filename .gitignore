@@ -108,3 +108,9 @@ node_modules/
 
 # Attached assets (temporary uploads)
 attached_assets/
+
+# Firebase configuration files (contain sensitive credentials)
+serviceAccountKey.json
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+firebase-config.js
