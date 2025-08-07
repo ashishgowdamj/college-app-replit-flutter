@@ -38,6 +38,10 @@ class BottomNavigation extends StatelessWidget {
           icon: Icon(Icons.favorite),
           label: 'Favorites',
         ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.compare_arrows),
+          label: 'Compare',
+        ),
       ],
     );
   }
@@ -55,6 +59,8 @@ class BottomNavigation extends StatelessWidget {
         return 3;
       case '/favorites':
         return 4;
+      case '/compare':
+        return 5;
       default:
         return 0;
     }
@@ -76,6 +82,9 @@ class BottomNavigation extends StatelessWidget {
         break;
       case 4:
         context.go('/favorites');
+        break;
+      case 5:
+        context.go('/compare');
         break;
     }
   }

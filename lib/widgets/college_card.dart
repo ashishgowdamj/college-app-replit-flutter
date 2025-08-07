@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/college.dart';
 
 class CollegeCard extends StatelessWidget {
   final College college;
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteToggle;
+  final VoidCallback? onCompare;
   final bool isFavorite;
 
   const CollegeCard({
@@ -12,266 +15,303 @@ class CollegeCard extends StatelessWidget {
     required this.college,
     this.onTap,
     this.onFavoriteToggle,
+    this.onCompare,
     this.isFavorite = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.08),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // College image with gradient overlay
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).primaryColor.withOpacity(0.1),
-                          Theme.of(context).primaryColor.withOpacity(0.3),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: college.imageUrl != null
-                          ? Image.network(
-                              college.imageUrl!,
-                              width: 90,
-                              height: 90,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.school_rounded,
-                                  size: 45,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.school_rounded,
-                                size: 45,
-                                color: Theme.of(context).primaryColor,
-                              ),
+              // Compact college image
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: college.imageUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: college.imageUrl!,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // College info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          college.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey[900],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_rounded,
-                              size: 16,
-                              color: Colors.grey[600],
+                          errorWidget: (context, url, error) => Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${college.city}, ${college.state}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                            child: Icon(
+                              Icons.school_rounded,
+                              size: 30,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.school_rounded,
+                          size: 30,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // Main content area
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // College name and actions row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            college.name,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[900],
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Compact action buttons
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: onFavoriteToggle,
+                              child: Icon(
+                                isFavorite ? Icons.favorite : Icons.favorite_border,
+                                color: isFavorite ? Colors.red : Colors.grey[400],
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => _shareCollege(context),
+                              child: Icon(
+                                Icons.share_outlined,
+                                color: Colors.grey[400],
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: onCompare,
+                              child: Icon(
+                                Icons.compare_arrows,
+                                color: Colors.grey[400],
+                                size: 20,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Location and type
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${college.city}, ${college.state}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             college.type,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 10,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  // Favorite button with improved design
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isFavorite 
-                          ? Colors.red.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                      shape: BoxShape.circle,
+                    const SizedBox(height: 6),
+                    
+                    // Key metrics in compact format - Fixed overflow
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        // Rating
+                        if (college.ratingAsDouble > 0)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Colors.amber[600],
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                college.ratingAsDouble.toStringAsFixed(1),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        
+                        // Fees
+                        if (college.fees != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.currency_rupee,
+                                size: 14,
+                                color: Colors.green[600],
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${(college.feesAsDouble / 1000).toStringAsFixed(0)}K',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        
+                        // NIRF Rank
+                        if (college.nirfRank != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.workspace_premium,
+                                size: 14,
+                                color: Colors.orange[600],
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '#${college.nirfRank}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                    child: IconButton(
-                      onPressed: onFavoriteToggle,
-                      icon: Icon(
-                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isFavorite ? Colors.red : Colors.grey[600],
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Rating and reviews
-              if (college.ratingAsDouble > 0) ...[
-                Row(
-                  children: [
-                    // Star rating
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < college.ratingAsDouble.floor()
-                              ? Icons.star_rounded
-                              : index < college.ratingAsDouble
-                                  ? Icons.star_half_rounded
-                                  : Icons.star_outline_rounded,
-                          color: Colors.amber[600],
-                          size: 18,
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${college.ratingAsDouble.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${college.reviewCount ?? 0} reviews)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                    const SizedBox(height: 4),
+                    
+                    // Additional info in compact format - Fixed overflow
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 2,
+                      children: [
+                        // Establishment year
+                        if (college.establishedYear != null)
+                          Text(
+                            'Est. ${college.establishedYear}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                            ),
+                          ),
+                        
+                        // Placement rate
+                        if (college.placementRate != null)
+                          Text(
+                            '${college.placementRate} placement',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                            ),
+                          ),
+                        
+                        // Hostel availability
+                        if (college.hasHostel == true)
+                          Text(
+                            '🏠 Hostel',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-              ],
-              // Fees and rank info with improved design
-              Row(
-                children: [
-                  if (college.fees != null) ...[
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.green[200]!, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.currency_rupee_rounded,
-                              size: 16,
-                              color: Colors.green[700],
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                '${college.feesAsDouble.toStringAsFixed(0)} ${college.feesPeriod ?? 'yearly'}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.green[700],
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  if (college.nirfRank != null)
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.orange[200]!, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.workspace_premium_rounded,
-                              size: 16,
-                              color: Colors.orange[700],
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                'NIRF #${college.nirfRank}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.orange[700],
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _shareCollege(BuildContext context) {
+    final shareText = '''
+🏫 ${college.name}
+📍 ${college.city}, ${college.state}
+${college.ratingAsDouble > 0 ? '⭐ ${college.ratingAsDouble.toStringAsFixed(1)}' : ''}
+${college.fees != null ? '💰 ₹${college.feesAsDouble.toStringAsFixed(0)}' : ''}
+${college.nirfRank != null ? '🏆 NIRF #${college.nirfRank}' : ''}
+${college.placementRate != null ? '💼 ${college.placementRate} placement' : ''}
+
+Check out this college on College Campus app!
+    '''.trim();
+    
+    Share.share(shareText, subject: 'Check out ${college.name}');
   }
 }

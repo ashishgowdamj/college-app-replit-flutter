@@ -272,7 +272,7 @@ class FirebaseService {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => College.fromJson({
-              ...doc.data() as Map<String, dynamic>,
+              ...doc.data(),
               'id': int.tryParse(doc.id) ?? 0,
             }))
             .toList());
@@ -286,7 +286,7 @@ class FirebaseService {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Review.fromJson({
-              ...doc.data() as Map<String, dynamic>,
+              ...doc.data(),
               'id': int.tryParse(doc.id) ?? 0,
             }))
             .toList());

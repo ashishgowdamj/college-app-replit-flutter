@@ -40,11 +40,11 @@ dependencies:
   # Storage
   shared_preferences: ^2.2.2
   
-  # Firebase
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.15.3
-  cloud_firestore: ^4.13.6
-  firebase_storage: ^11.5.6
+  # Firebase - using older stable versions that work better with iOS
+  firebase_core: ^2.15.1
+  firebase_auth: ^4.7.3
+  cloud_firestore: ^4.8.5
+  firebase_storage: ^11.2.6
 
 dev_dependencies:
   flutter_test:

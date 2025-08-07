@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
@@ -300,8 +299,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
               children: [
                 if (exam.conductingBody != null)
                   _buildDetailRow('Conducting Body', exam.conductingBody!),
-                if (exam.type != null)
-                  _buildDetailRow('Exam Type', exam.type),
+                _buildDetailRow('Exam Type', exam.type),
                 if (exam.frequency != null)
                   _buildDetailRow('Frequency', exam.frequency!),
                 if (exam.applicationStartDate != null)

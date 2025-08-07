@@ -10,6 +10,7 @@ import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/predictor_screen.dart';
 import 'screens/exams_screen.dart';
+import 'screens/compare_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -105,6 +106,36 @@ class MyApp extends StatelessWidget {
         ),
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return WillPopScope(
+            onWillPop: () async {
+              // Check if we can pop the current route
+              if (GoRouter.of(context).canPop()) {
+                GoRouter.of(context).pop();
+                return false; // Don't close the app
+              }
+              // If we can't pop, show a dialog to confirm app exit
+              return await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Exit App'),
+                  content: const Text('Are you sure you want to exit the app?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Exit'),
+                    ),
+                  ],
+                ),
+              ) ?? false;
+            },
+            child: child!,
+          );
+        },
       ),
     );
   }
@@ -112,6 +143,29 @@ class MyApp extends StatelessWidget {
 
 final GoRouter _router = GoRouter(
   initialLocation: '/home',
+  errorBuilder: (context, state) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Page Not Found'),
+      backgroundColor: const Color(0xFF4F46E5),
+      foregroundColor: Colors.white,
+    ),
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text('Page not found'),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.go('/home'),
+            child: const Text('Go Home'),
+          ),
+        ],
+      ),
+    ),
+  ),
+  redirectLimit: 5,
   routes: [
     GoRoute(
       path: '/',
@@ -136,6 +190,10 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/exams',
       builder: (context, state) => const ExamsScreen(),
+    ),
+    GoRoute(
+      path: '/compare',
+      builder: (context, state) => const CompareScreen(),
     ),
     GoRoute(
       path: '/college/:id',

@@ -7,7 +7,7 @@ class CollegeProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   
   List<College> _colleges = [];
-  List<College> _favoriteColleges = [];
+  final List<College> _favoriteColleges = [];
   College? _selectedCollege;
   List<Review> _selectedCollegeReviews = [];
   bool _isLoading = false;
@@ -19,6 +19,7 @@ class CollegeProvider with ChangeNotifier {
   String? _selectedCourseType;
   int? _minFees;
   int? _maxFees;
+  Map<String, dynamic> _currentFilters = {};
   
   // Pagination state
   bool _hasMoreData = true;
@@ -39,10 +40,51 @@ class CollegeProvider with ChangeNotifier {
   int? get maxFees => _maxFees;
   bool get hasMoreData => _hasMoreData;
   bool get isLoadingMore => _isLoading && _colleges.isNotEmpty;
+  Map<String, dynamic> get currentFilters => _currentFilters;
 
   // Search and filter methods
   void updateSearchQuery(String query) {
     _searchQuery = query;
+    notifyListeners();
+  }
+
+  void setFilter(String key, dynamic value) {
+    _currentFilters[key] = value;
+    // Update the corresponding filter properties
+    switch (key) {
+      case 'type':
+        _selectedCourseType = value;
+        break;
+      case 'state':
+        _selectedState = value;
+        break;
+      case 'minFees':
+        _minFees = value;
+        break;
+      case 'maxFees':
+        _maxFees = value;
+        break;
+    }
+    notifyListeners();
+  }
+
+  void clearFilter(String key) {
+    _currentFilters.remove(key);
+    // Clear the corresponding filter properties
+    switch (key) {
+      case 'type':
+        _selectedCourseType = null;
+        break;
+      case 'state':
+        _selectedState = null;
+        break;
+      case 'minFees':
+        _minFees = null;
+        break;
+      case 'maxFees':
+        _maxFees = null;
+        break;
+    }
     notifyListeners();
   }
 
@@ -56,6 +98,14 @@ class CollegeProvider with ChangeNotifier {
     _selectedCourseType = courseType;
     _minFees = minFees;
     _maxFees = maxFees;
+    
+    // Update current filters map
+    _currentFilters.clear();
+    if (state != null) _currentFilters['state'] = state;
+    if (courseType != null) _currentFilters['type'] = courseType;
+    if (minFees != null) _currentFilters['minFees'] = minFees;
+    if (maxFees != null) _currentFilters['maxFees'] = maxFees;
+    
     notifyListeners();
   }
 
@@ -64,6 +114,7 @@ class CollegeProvider with ChangeNotifier {
     _selectedCourseType = null;
     _minFees = null;
     _maxFees = null;
+    _currentFilters.clear();
     _resetPagination();
     notifyListeners();
   }

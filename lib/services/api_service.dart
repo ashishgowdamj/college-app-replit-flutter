@@ -127,7 +127,7 @@ class ApiService {
             .toList();
       }
       return [];
-    } on DioException catch (e) {
+    } on DioException {
       return _getMockReviews(collegeId);
     }
   }
@@ -169,7 +169,7 @@ class ApiService {
             .toList();
       }
       return [];
-    } on DioException catch (e) {
+    } on DioException {
       return _getMockExams();
     }
   }
@@ -221,7 +221,7 @@ class ApiService {
             .toList();
       }
       return [];
-    } on DioException catch (e) {
+    } on DioException {
       return _getMockColleges().take(5).toList();
     }
   }
