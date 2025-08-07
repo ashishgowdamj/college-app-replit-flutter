@@ -997,7 +997,7 @@ export class MemStorage implements IStorage {
     const comparison: Comparison = {
       ...insertComparison,
       name: insertComparison.name || null,
-      collegeIds: insertComparison.collegeIds || null,
+      collegeIds: Array.isArray(insertComparison.collegeIds) ? (insertComparison.collegeIds as number[]) : null,
       userId: insertComparison.userId || null,
       id,
       createdAt: new Date()
@@ -1020,7 +1020,11 @@ export class MemStorage implements IStorage {
     const id = this.currentUserId++;
     const user: User = { 
       ...insertUser,
-      preferences: insertUser.preferences || null,
+      preferences: insertUser.preferences && typeof insertUser.preferences === 'object' ? insertUser.preferences as {
+        interestedCourses?: string[];
+        preferredLocations?: string[];
+        budgetRange?: { min: number; max: number };
+      } : null,
       id,
       createdAt: new Date()
     };

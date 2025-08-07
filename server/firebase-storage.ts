@@ -7,7 +7,7 @@ import {
   type User, type InsertUser
 } from "@shared/schema";
 
-import { db } from '../firebase-config';
+import { db } from '../firebase-config.js';
 
 export interface IStorage {
   // College operations
@@ -61,7 +61,7 @@ export class FirebaseStorage implements IStorage {
     offset?: number;
   }): Promise<College[]> {
     try {
-      let query = db.collection('colleges');
+      let query: any = db.collection('colleges');
       
       // Apply filters
       if (filters?.state) {
@@ -82,7 +82,7 @@ export class FirebaseStorage implements IStorage {
       const snapshot = await query.get();
       let colleges: College[] = [];
       
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc: any) => {
         colleges.push({
           id: parseInt(doc.id),
           ...doc.data()
@@ -156,7 +156,7 @@ export class FirebaseStorage implements IStorage {
         .get();
       
       const courses: Course[] = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc: any) => {
         courses.push({
           id: parseInt(doc.id),
           ...doc.data()
@@ -191,7 +191,7 @@ export class FirebaseStorage implements IStorage {
       const snapshot = await db.collection('exams').get();
       const exams: Exam[] = [];
       
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc: any) => {
         exams.push({
           id: parseInt(doc.id),
           ...doc.data()
@@ -229,7 +229,7 @@ export class FirebaseStorage implements IStorage {
         .get();
       
       const reviews: Review[] = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc: any) => {
         reviews.push({
           id: parseInt(doc.id),
           ...doc.data()

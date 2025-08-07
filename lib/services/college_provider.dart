@@ -19,7 +19,7 @@ class CollegeProvider with ChangeNotifier {
   String? _selectedCourseType;
   int? _minFees;
   int? _maxFees;
-  Map<String, dynamic> _currentFilters = {};
+  final Map<String, dynamic> _currentFilters = {};
   
   // Pagination state
   bool _hasMoreData = true;
@@ -145,13 +145,78 @@ class CollegeProvider with ChangeNotifier {
         offset: refresh ? 0 : _currentPage * _pageSize,
       );
       
-      if (refresh) {
-        _colleges = newColleges;
-      } else {
-        _colleges.addAll(newColleges);
+      // Apply client-side filtering for mock data
+      List<College> filteredColleges = newColleges;
+      
+      // Apply search filter
+      if (_searchQuery.isNotEmpty) {
+        final searchLower = _searchQuery.toLowerCase();
+        filteredColleges = filteredColleges.where((college) =>
+          college.name.toLowerCase().contains(searchLower) ||
+          (college.shortName?.toLowerCase().contains(searchLower) ?? false) ||
+          college.location.toLowerCase().contains(searchLower) ||
+          college.city.toLowerCase().contains(searchLower) ||
+          college.state.toLowerCase().contains(searchLower) ||
+          (college.description?.toLowerCase().contains(searchLower) ?? false)
+        ).toList();
       }
       
-      _hasMoreData = newColleges.length >= _pageSize;
+      // Apply course type filter
+      if (_selectedCourseType != null && _selectedCourseType!.isNotEmpty) {
+        if (_selectedCourseType!.toLowerCase() == 'medical') {
+          filteredColleges = filteredColleges.where((college) =>
+            college.admissionProcess?.toLowerCase().contains('neet') ?? false
+          ).toList();
+        } else if (_selectedCourseType!.toLowerCase() == 'management') {
+          filteredColleges = filteredColleges.where((college) =>
+            (college.admissionProcess?.toLowerCase().contains('cat') ?? false) ||
+            (college.admissionProcess?.toLowerCase().contains('xat') ?? false)
+          ).toList();
+        } else if (_selectedCourseType!.toLowerCase() == 'iit') {
+          filteredColleges = filteredColleges.where((college) =>
+            college.name.toLowerCase().contains('iit') ||
+            (college.admissionProcess?.toLowerCase().contains('jee advanced') ?? false)
+          ).toList();
+        } else if (_selectedCourseType!.toLowerCase() == 'government') {
+          filteredColleges = filteredColleges.where((college) =>
+            college.type.toLowerCase() == 'government'
+          ).toList();
+        } else if (_selectedCourseType!.toLowerCase() == 'private') {
+          filteredColleges = filteredColleges.where((college) =>
+            college.type.toLowerCase() == 'private'
+          ).toList();
+        }
+      }
+      
+      // Apply state filter
+      if (_selectedState != null && _selectedState!.isNotEmpty) {
+        filteredColleges = filteredColleges.where((college) =>
+          college.state.toLowerCase() == _selectedState!.toLowerCase()
+        ).toList();
+      }
+      
+      // Apply fees filter
+      if (_minFees != null && _minFees! > 0) {
+        filteredColleges = filteredColleges.where((college) {
+          final fees = double.tryParse(college.fees ?? '0') ?? 0;
+          return fees >= _minFees!;
+        }).toList();
+      }
+      
+      if (_maxFees != null && _maxFees! > 0) {
+        filteredColleges = filteredColleges.where((college) {
+          final fees = double.tryParse(college.fees ?? '0') ?? 0;
+          return fees <= _maxFees!;
+        }).toList();
+      }
+      
+      if (refresh) {
+        _colleges = filteredColleges;
+      } else {
+        _colleges.addAll(filteredColleges);
+      }
+      
+      _hasMoreData = filteredColleges.length >= _pageSize;
       if (_hasMoreData) {
         _currentPage++;
       }

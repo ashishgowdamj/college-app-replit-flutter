@@ -53,7 +53,13 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               appBar: AppBar(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                 ),
               ),
               body: const Center(
@@ -74,7 +80,13 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               appBar: AppBar(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                 ),
               ),
               body: Center(
@@ -106,7 +118,13 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               appBar: AppBar(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                 ),
               ),
               body: const Center(
@@ -136,7 +154,13 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
           pinned: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
           flexibleSpace: FlexibleSpaceBar(
             title: Text(
@@ -605,7 +629,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
           ListTile(
             leading: const Icon(Icons.location_on, color: Colors.red),
             title: const Text('Address'),
-            subtitle: Text('${college.location}'),
+            subtitle: Text(college.location),
             trailing: const Icon(Icons.map),
             onTap: () => _openMap(college.location),
           ),

@@ -56,6 +56,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Courses routes
+  app.get("/api/colleges/:id/courses", async (req, res) => {
+    try {
+      const collegeId = parseInt(req.params.id);
+      const courses = await storage.getCoursesByCollege(collegeId);
+      res.json(courses);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  // States and locations routes
+  app.get("/api/states", async (req, res) => {
+    try {
+      const colleges = await storage.getColleges();
+      const states = [...new Set(colleges.map(college => college.state))].sort();
+      res.json(states);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch states" });
+    }
+  });
+
+  app.get("/api/cities", async (req, res) => {
+    try {
+      const colleges = await storage.getColleges();
+      const cities = [...new Set(colleges.map(college => college.city))].sort();
+      res.json(cities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cities" });
+    }
+  });
+
   // Exam routes
   app.get("/api/exams", async (req, res) => {
     try {
@@ -153,6 +185,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(predictedColleges);
     } catch (error) {
       res.status(500).json({ message: "Failed to predict colleges" });
+    }
+  });
+
+  // Statistics route
+  app.get("/api/stats", async (req, res) => {
+    try {
+      const colleges = await storage.getColleges();
+      const exams = await storage.getExams();
+      
+      const stats = {
+        totalColleges: colleges.length,
+        totalExams: exams.length,
+        states: [...new Set(colleges.map(c => c.state))].length,
+        cities: [...new Set(colleges.map(c => c.city))].length,
+        avgRating: colleges.reduce((sum, c) => sum + (c.rating || 0), 0) / colleges.length,
+        avgFees: colleges.reduce((sum, c) => sum + (parseFloat(c.fees || '0')), 0) / colleges.length,
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch statistics" });
     }
   });
 

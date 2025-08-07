@@ -45,14 +45,24 @@ class _CompareScreenState extends State<CompareScreen> {
     return WillPopScope(
       onWillPop: () async {
         // Navigate back to previous screen
-        context.pop();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
         return false; // Prevent default back behavior
       },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
           title: const Text('Compare Colleges'),
           backgroundColor: Theme.of(context).primaryColor,
@@ -136,7 +146,7 @@ class _CompareScreenState extends State<CompareScreen> {
           
           // Selected colleges chips - compact
           if (selectedColleges.isNotEmpty)
-            Container(
+            SizedBox(
               height: 40,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -162,7 +172,7 @@ class _CompareScreenState extends State<CompareScreen> {
           
                     // Compact college selection - only show when searching
           if (_isSearching && selectedColleges.length < 4)
-            Container(
+            SizedBox(
               height: 120,
               child: _filteredColleges.isEmpty
                   ? Center(
@@ -180,7 +190,7 @@ class _CompareScreenState extends State<CompareScreen> {
                         final college = _filteredColleges[index];
                         final isSelected = selectedCollegeIds.contains(college.id.toString());
                         
-                        return Container(
+                        return SizedBox(
                           height: 40,
                           child: ListTile(
                             dense: true,
