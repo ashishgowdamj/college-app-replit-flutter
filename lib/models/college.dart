@@ -66,6 +66,8 @@ class College {
   final String? hostelFees;
   @JsonKey(name: 'has_hostel')
   final bool? hasHostel;
+  @JsonKey(defaultValue: [])
+  final List<String> exams;
   @JsonKey(name: 'created_at')
   @TimestampConverter()
   final String? createdAt;
@@ -96,10 +98,12 @@ class College {
     this.highestPackage,
     this.hostelFees,
     this.hasHostel,
+    this.exams = const [],
     this.createdAt,
   });
 
-  factory College.fromJson(Map<String, dynamic> json) => _$CollegeFromJson(json);
+  factory College.fromJson(Map<String, dynamic> json) =>
+      _$CollegeFromJson(json);
   Map<String, dynamic> toJson() => _$CollegeToJson(this);
 
   double get ratingAsDouble => double.tryParse(rating ?? '0') ?? 0.0;

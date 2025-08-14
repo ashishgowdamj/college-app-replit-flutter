@@ -6,10 +6,12 @@ import '../models/review.dart';
 
 class ApiService {
   // Use local backend for testing
-  static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator localhost
+  static const String baseUrl =
+      'http://10.0.2.2:3000/api'; // Android emulator localhost
   // Fallback to mock data if server is not available
-  static const bool useMockData = true; // Set to true temporarily to test with mock data
-  
+  static const bool useMockData =
+      true; // Set to true temporarily to test with mock data
+
   final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
     connectTimeout: const Duration(seconds: 10),
@@ -31,12 +33,13 @@ class ApiService {
     if (useMockData) {
       return _getMockColleges();
     }
-    
+
     try {
       // Build query parameters
       Map<String, dynamic> queryParams = {};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (location != null && location.isNotEmpty) queryParams['location'] = location;
+      if (location != null && location.isNotEmpty)
+        queryParams['location'] = location;
       if (state != null && state.isNotEmpty) queryParams['state'] = state;
       if (courseType != null && courseType.isNotEmpty) {
         // Map courseType to the appropriate backend filter
@@ -50,18 +53,24 @@ class ApiService {
           queryParams['courseType'] = courseType;
         }
       }
-      if (minFees != null && minFees > 0) queryParams['minFees'] = minFees.toString();
-      if (maxFees != null && maxFees > 0) queryParams['maxFees'] = maxFees.toString();
-      if (entranceExam != null && entranceExam.isNotEmpty) queryParams['entranceExam'] = entranceExam;
+      if (minFees != null && minFees > 0)
+        queryParams['minFees'] = minFees.toString();
+      if (maxFees != null && maxFees > 0)
+        queryParams['maxFees'] = maxFees.toString();
+      if (entranceExam != null && entranceExam.isNotEmpty)
+        queryParams['entranceExam'] = entranceExam;
       if (limit != null && limit > 0) queryParams['limit'] = limit.toString();
-      if (offset != null && offset > 0) queryParams['offset'] = offset.toString();
-      
-      print('Making API call to: ${baseUrl}/colleges with params: $queryParams');
-      final response = await _dio.get('/colleges', queryParameters: queryParams);
-      
+      if (offset != null && offset > 0)
+        queryParams['offset'] = offset.toString();
+
+      print('Making API call to: $baseUrl/colleges with params: $queryParams');
+      final response =
+          await _dio.get('/colleges', queryParameters: queryParams);
+
       print('API response status: ${response.statusCode}');
-      print('API response data length: ${response.data is List ? (response.data as List).length : 'not a list'}');
-      
+      print(
+          'API response data length: ${response.data is List ? (response.data as List).length : 'not a list'}');
+
       if (response.data is List) {
         final colleges = (response.data as List)
             .map((json) => College.fromJson(json))
@@ -93,7 +102,7 @@ class ApiService {
         return null;
       }
     }
-    
+
     try {
       final response = await _dio.get('/colleges/$id');
       return College.fromJson(response.data);
@@ -113,10 +122,10 @@ class ApiService {
     if (useMockData) {
       return _getMockReviews(collegeId);
     }
-    
+
     try {
       final response = await _dio.get('/colleges/$collegeId/reviews');
-      
+
       if (response.data is List) {
         return (response.data as List)
             .map((json) => Review.fromJson(json))
@@ -128,7 +137,8 @@ class ApiService {
     }
   }
 
-  Future<Review> createReview(int collegeId, Map<String, dynamic> reviewData) async {
+  Future<Review> createReview(
+      int collegeId, Map<String, dynamic> reviewData) async {
     if (useMockData) {
       // Create a mock review
       return Review(
@@ -141,9 +151,10 @@ class ApiService {
         createdAt: DateTime.now().toIso8601String(),
       );
     }
-    
+
     try {
-      final response = await _dio.post('/colleges/$collegeId/reviews', data: reviewData);
+      final response =
+          await _dio.post('/colleges/$collegeId/reviews', data: reviewData);
       return Review.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception('Failed to create review: ${e.message}');
@@ -155,10 +166,10 @@ class ApiService {
     if (useMockData) {
       return _getMockExams();
     }
-    
+
     try {
       final response = await _dio.get('/exams');
-      
+
       if (response.data is List) {
         return (response.data as List)
             .map((json) => Exam.fromJson(json))
@@ -179,7 +190,7 @@ class ApiService {
         return null;
       }
     }
-    
+
     try {
       final response = await _dio.get('/exams/$id');
       return Exam.fromJson(response.data);
@@ -203,14 +214,14 @@ class ApiService {
     if (useMockData) {
       return _getMockColleges().take(5).toList();
     }
-    
+
     try {
       final response = await _dio.post('/predict-colleges', data: {
         'score': score,
         'exam': exam,
         'preferences': preferences,
       });
-      
+
       if (response.data is List) {
         return (response.data as List)
             .map((json) => College.fromJson(json))
@@ -235,7 +246,8 @@ class ApiService {
         establishedYear: 1961,
         type: "Government",
         affiliation: "IIT System",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier engineering and technology institute",
         website: "https://home.iitd.ac.in/",
         overallRank: 1,
@@ -263,7 +275,8 @@ class ApiService {
         establishedYear: 1956,
         type: "Government",
         affiliation: "Ministry of Health and Family Welfare",
-        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier medical college and hospital",
         website: "https://www.aiims.edu/",
         overallRank: 1,
@@ -291,7 +304,8 @@ class ApiService {
         establishedYear: 1961,
         type: "Government",
         affiliation: "IIM System",
-        imageUrl: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier business school in India",
         website: "https://www.iima.ac.in/",
         overallRank: 1,
@@ -319,7 +333,8 @@ class ApiService {
         establishedYear: 1909,
         type: "Government",
         affiliation: "Autonomous",
-        imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1523050854058-8df90110c9d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier research institute for science and engineering",
         website: "https://www.iisc.ac.in/",
         overallRank: 1,
@@ -347,7 +362,8 @@ class ApiService {
         establishedYear: 1958,
         type: "Government",
         affiliation: "IIT System",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Leading IIT known for engineering excellence",
         website: "https://www.iitb.ac.in/",
         overallRank: 2,
@@ -375,7 +391,8 @@ class ApiService {
         establishedYear: 1959,
         type: "Government",
         affiliation: "IIT System",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier engineering institute with strong research focus",
         website: "https://www.iitm.ac.in/",
         overallRank: 3,
@@ -403,7 +420,8 @@ class ApiService {
         establishedYear: 1964,
         type: "Private",
         affiliation: "Deemed University",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier private engineering institution",
         website: "https://www.bits-pilani.ac.in/",
         overallRank: 15,
@@ -431,7 +449,8 @@ class ApiService {
         establishedYear: 1941,
         type: "Government",
         affiliation: "State University",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Leading state engineering university",
         website: "http://www.dtu.ac.in/",
         overallRank: 35,
@@ -459,7 +478,8 @@ class ApiService {
         establishedYear: 1984,
         type: "Private",
         affiliation: "Deemed University",
-        imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Leading private engineering university",
         website: "https://vit.ac.in/",
         overallRank: 20,
@@ -487,7 +507,8 @@ class ApiService {
         establishedYear: 1900,
         type: "Private",
         affiliation: "Deemed University",
-        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier Christian medical college",
         website: "https://www.cmch-vellore.edu/",
         overallRank: 2,
@@ -515,7 +536,8 @@ class ApiService {
         establishedYear: 1948,
         type: "Government",
         affiliation: "Armed Forces",
-        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Military medical college with free education",
         website: "https://www.afmc.nic.in/",
         overallRank: 5,
@@ -543,7 +565,8 @@ class ApiService {
         establishedYear: 1973,
         type: "Government",
         affiliation: "IIM System",
-        imageUrl: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Top business school with excellent placements",
         website: "https://www.iimb.ac.in/",
         overallRank: 2,
@@ -571,7 +594,8 @@ class ApiService {
         establishedYear: 1955,
         type: "Private",
         affiliation: "Autonomous",
-        imageUrl: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier HR and management institute",
         website: "https://www.xlri.ac.in/",
         overallRank: 8,
@@ -599,7 +623,8 @@ class ApiService {
         establishedYear: 1987,
         type: "Government",
         affiliation: "State University",
-        imageUrl: "https://images.unsplash.com/photo-1589578228447-e1a4e481c6c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1589578228447-e1a4e481c6c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier law school in India",
         website: "https://www.nls.ac.in/",
         overallRank: 1,
@@ -627,7 +652,8 @@ class ApiService {
         establishedYear: 1924,
         type: "Government",
         affiliation: "Central University",
-        imageUrl: "https://images.unsplash.com/photo-1589578228447-e1a4e481c6c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1589578228447-e1a4e481c6c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Historic law faculty with affordable education",
         website: "https://lawfaculty.du.ac.in/",
         overallRank: 4,
@@ -655,7 +681,8 @@ class ApiService {
         establishedYear: 1869,
         type: "Private",
         affiliation: "University of Mumbai",
-        imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier arts and science college",
         website: "https://www.xaviers.edu/",
         overallRank: 2,
@@ -683,7 +710,8 @@ class ApiService {
         establishedYear: 1969,
         type: "Government",
         affiliation: "Central University",
-        imageUrl: "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier university for social sciences and liberal arts",
         website: "https://www.jnu.ac.in/",
         overallRank: 2,
@@ -711,7 +739,8 @@ class ApiService {
         establishedYear: 1905,
         type: "Government",
         affiliation: "ICAR",
-        imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier agricultural research institute",
         website: "https://www.iari.res.in/",
         overallRank: 1,
@@ -739,7 +768,8 @@ class ApiService {
         establishedYear: 1926,
         type: "Government",
         affiliation: "University of Delhi",
-        imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Top commerce college with excellent placements",
         website: "https://srcc.edu/",
         overallRank: 1,
@@ -767,7 +797,8 @@ class ApiService {
         establishedYear: 1941,
         type: "Government",
         affiliation: "Institute of National Importance",
-        imageUrl: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier architecture and planning school",
         website: "https://www.spa.ac.in/",
         overallRank: 1,
@@ -795,7 +826,8 @@ class ApiService {
         establishedYear: 1956,
         type: "Government",
         affiliation: "University of Delhi",
-        imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        imageUrl:
+            "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
         description: "Premier women's college for arts and commerce",
         website: "https://www.lsr.edu.in/",
         overallRank: 3,
@@ -825,7 +857,8 @@ class ApiService {
         title: "Excellent Experience",
         content: "Excellent infrastructure and faculty. Highly recommended!",
         studentName: "Rahul Kumar",
-        createdAt: DateTime.now().subtract(const Duration(days: 5)).toIso8601String(),
+        createdAt:
+            DateTime.now().subtract(const Duration(days: 5)).toIso8601String(),
       ),
       Review(
         id: 2,
@@ -834,7 +867,8 @@ class ApiService {
         title: "Great Placements",
         content: "Great placement opportunities and campus life.",
         studentName: "Priya Sharma",
-        createdAt: DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
+        createdAt:
+            DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
       ),
       Review(
         id: 3,
@@ -843,7 +877,8 @@ class ApiService {
         title: "Good Environment",
         content: "Good academic environment with modern facilities.",
         studentName: "Amit Patel",
-        createdAt: DateTime.now().subtract(const Duration(days: 15)).toIso8601String(),
+        createdAt:
+            DateTime.now().subtract(const Duration(days: 15)).toIso8601String(),
       ),
     ];
   }
@@ -856,8 +891,10 @@ class ApiService {
         fullName: "Joint Entrance Examination Main",
         type: "Engineering",
         website: "https://jeemain.nta.nic.in/",
-        examDate: DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        applicationEndDate: DateTime.now().add(const Duration(days: 15)).toIso8601String(),
+        examDate:
+            DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+        applicationEndDate:
+            DateTime.now().add(const Duration(days: 15)).toIso8601String(),
         eligibility: "Class 12 pass with Physics, Chemistry, Mathematics",
         examPattern: "Computer Based Test",
         duration: "3 hours",
@@ -870,8 +907,10 @@ class ApiService {
         fullName: "National Eligibility cum Entrance Test",
         type: "Medical",
         website: "https://neet.nta.nic.in/",
-        examDate: DateTime.now().add(const Duration(days: 45)).toIso8601String(),
-        applicationEndDate: DateTime.now().add(const Duration(days: 25)).toIso8601String(),
+        examDate:
+            DateTime.now().add(const Duration(days: 45)).toIso8601String(),
+        applicationEndDate:
+            DateTime.now().add(const Duration(days: 25)).toIso8601String(),
         eligibility: "Class 12 pass with Physics, Chemistry, Biology",
         examPattern: "Pen and Paper Based Test",
         duration: "3 hours 20 minutes",
@@ -884,8 +923,10 @@ class ApiService {
         fullName: "Common Admission Test",
         type: "Management",
         website: "https://iimcat.ac.in/",
-        examDate: DateTime.now().add(const Duration(days: 60)).toIso8601String(),
-        applicationEndDate: DateTime.now().add(const Duration(days: 40)).toIso8601String(),
+        examDate:
+            DateTime.now().add(const Duration(days: 60)).toIso8601String(),
+        applicationEndDate:
+            DateTime.now().add(const Duration(days: 40)).toIso8601String(),
         eligibility: "Bachelor's degree with 50% marks",
         examPattern: "Computer Based Test",
         duration: "3 hours",

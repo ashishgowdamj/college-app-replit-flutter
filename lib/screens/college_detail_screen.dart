@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
-import '../models/review.dart';
 
 class CollegeDetailScreen extends StatefulWidget {
   final String collegeId;
@@ -145,7 +144,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     );
   }
 
-  Widget _buildCollegeDetails(BuildContext context, College college, CollegeProvider provider) {
+  Widget _buildCollegeDetails(
+      BuildContext context, College college, CollegeProvider provider) {
     return CustomScrollView(
       slivers: [
         // Enhanced SliverAppBar with better design
@@ -176,10 +176,11 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               fit: StackFit.expand,
               children: [
                 college.imageUrl != null && college.imageUrl!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: college.imageUrl!,
-                    fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => _buildPlaceholderBackground(context),
+                    ? CachedNetworkImage(
+                        imageUrl: college.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) =>
+                            _buildPlaceholderBackground(context),
                         placeholder: (context, url) => Container(
                           color: Colors.grey[200],
                           child: const Center(
@@ -203,12 +204,14 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                   ),
                 ),
               ],
-                  ),
+            ),
           ),
           actions: [
             IconButton(
               icon: Icon(
-                provider.isFavorite(college) ? Icons.favorite : Icons.favorite_border,
+                provider.isFavorite(college)
+                    ? Icons.favorite
+                    : Icons.favorite_border,
                 color: provider.isFavorite(college) ? Colors.red : Colors.white,
               ),
               onPressed: () => provider.toggleFavorite(college),
@@ -219,24 +222,24 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             ),
           ],
         ),
-        
+
         // College header information
         SliverToBoxAdapter(
           child: Container(
             padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 // College name and basic info
-                    Text(
-                      college.name,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                Text(
+                  college.name,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                    color: Colors.grey[900],
-                  ),
+                        color: Colors.grey[900],
+                      ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Location with enhanced design
                 Row(
                   children: [
@@ -253,19 +256,19 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                        Text(
-                          '${college.city}, ${college.state}',
+                    Text(
+                      '${college.city}, ${college.state}',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
                           ),
-                        ),
-                      ],
                     ),
+                  ],
+                ),
                 const SizedBox(height: 12),
-                
+
                 // Rating section with enhanced design
-                    if (college.ratingAsDouble > 0) ...[
+                if (college.ratingAsDouble > 0) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -274,7 +277,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                       border: Border.all(color: Colors.amber[200]!),
                     ),
                     child: Row(
-                        children: [
+                      children: [
                         RatingBar.builder(
                           initialRating: college.ratingAsDouble,
                           minRating: 1,
@@ -284,56 +287,62 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                           itemSize: 24.0,
                           ignoreGestures: true,
                           onRatingUpdate: (rating) {},
-                            itemBuilder: (context, index) => const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                            ),
+                          itemBuilder: (context, index) => const Icon(
+                            Icons.star,
+                            color: Colors.amber,
                           ),
+                        ),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                          Text(
+                            Text(
                               college.ratingAsDouble.toStringAsFixed(1),
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber[800],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber[800],
+                                  ),
                             ),
                             Text(
                               '${college.reviewCount ?? 0} reviews',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.amber[700],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.amber[700],
+                                  ),
                             ),
                           ],
-                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Key metrics in a grid layout
                 _buildKeyMetricsGrid(context, college),
                 const SizedBox(height: 20),
-                  ],
-                ),
-              ),
+              ],
+            ),
+          ),
         ),
-        
+
         // Enhanced tab bar
         SliverPersistentHeader(
           pinned: true,
           delegate: _SliverAppBarDelegate(
-              TabBar(
-                controller: _tabController,
-                labelColor: Theme.of(context).primaryColor,
-                unselectedLabelColor: Colors.grey[600],
-                indicatorColor: Theme.of(context).primaryColor,
+            TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).primaryColor,
+              unselectedLabelColor: Colors.grey[600],
+              indicatorColor: Theme.of(context).primaryColor,
               indicatorWeight: 3,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-                tabs: const [
+              tabs: const [
                 Tab(icon: Icon(Icons.info_outline), text: 'Overview'),
                 Tab(icon: Icon(Icons.school), text: 'Courses'),
                 Tab(icon: Icon(Icons.work), text: 'Placement'),
@@ -342,7 +351,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             ),
           ),
         ),
-        
+
         // Tab content
         SliverFillRemaining(
           child: TabBarView(
@@ -417,8 +426,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     );
   }
 
-  Widget _buildMetricCard(BuildContext context, String title, String value, 
-                           String subtitle, IconData icon, Color color) {
+  Widget _buildMetricCard(BuildContext context, String title, String value,
+      String subtitle, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(10), // Further reduced padding
       decoration: BoxDecoration(
@@ -438,10 +447,10 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: color.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11, // Smaller font size
-                  ),
+                        color: color.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11, // Smaller font size
+                      ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -451,10 +460,10 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-              fontSize: 16, // Slightly smaller font
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontSize: 16, // Slightly smaller font
+                ),
             overflow: TextOverflow.ellipsis,
           ),
           if (subtitle.isNotEmpty) ...[
@@ -462,9 +471,9 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: color.withOpacity(0.7),
-                fontSize: 10, // Smaller font size
-              ),
+                    color: color.withOpacity(0.7),
+                    fontSize: 10, // Smaller font size
+                  ),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -493,19 +502,19 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               child: Text(
                 college.description!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.5,
-                ),
+                      height: 1.5,
+                    ),
               ),
             ),
             const SizedBox(height: 24),
           ],
-          
+
           // College details
           _buildSectionTitle('College Details', Icons.school),
           const SizedBox(height: 12),
           _buildDetailCard(context, college),
           const SizedBox(height: 24),
-          
+
           // Contact information
           if (college.website != null) ...[
             _buildSectionTitle('Contact', Icons.contact_phone),
@@ -553,13 +562,17 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
         children: [
           _buildDetailRow('Type', college.type, Icons.category),
           if (college.establishedYear != null)
-            _buildDetailRow('Established', college.establishedYear.toString(), Icons.calendar_today),
+            _buildDetailRow('Established', college.establishedYear.toString(),
+                Icons.calendar_today),
           if (college.affiliation != null)
-            _buildDetailRow('Affiliation', college.affiliation!, Icons.account_balance),
+            _buildDetailRow(
+                'Affiliation', college.affiliation!, Icons.account_balance),
           if (college.admissionProcess != null)
-            _buildDetailRow('Admission Process', college.admissionProcess!, Icons.how_to_reg),
+            _buildDetailRow('Admission Process', college.admissionProcess!,
+                Icons.how_to_reg),
           if (college.cutoffScore != null)
-            _buildDetailRow('Cutoff Score', college.cutoffScore.toString(), Icons.score),
+            _buildDetailRow(
+                'Cutoff Score', college.cutoffScore.toString(), Icons.score),
         ],
       ),
     );
@@ -662,13 +675,17 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             ),
             child: Column(
               children: [
-                _buildCourseItem('Bachelor of Technology (B.Tech)', '4 Years', 'Engineering'),
+                _buildCourseItem('Bachelor of Technology (B.Tech)', '4 Years',
+                    'Engineering'),
                 const Divider(),
-                _buildCourseItem('Master of Technology (M.Tech)', '2 Years', 'Engineering'),
+                _buildCourseItem(
+                    'Master of Technology (M.Tech)', '2 Years', 'Engineering'),
                 const Divider(),
-                _buildCourseItem('Bachelor of Science (B.Sc)', '3 Years', 'Science'),
+                _buildCourseItem(
+                    'Bachelor of Science (B.Sc)', '3 Years', 'Science'),
                 const Divider(),
-                _buildCourseItem('Master of Business Administration (MBA)', '2 Years', 'Management'),
+                _buildCourseItem('Master of Business Administration (MBA)',
+                    '2 Years', 'Management'),
               ],
             ),
           ),
@@ -706,7 +723,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.green[50],
                         borderRadius: BorderRadius.circular(4),
@@ -722,7 +740,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.orange[50],
                         borderRadius: BorderRadius.circular(4),
@@ -754,7 +773,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
         children: [
           _buildSectionTitle('Placement Statistics', Icons.work),
           const SizedBox(height: 16),
-          
+
           // Placement overview card
           Container(
             padding: const EdgeInsets.all(20),
@@ -773,17 +792,29 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
             child: Column(
               children: [
                 if (college.placementRate != null)
-                  _buildPlacementStat('Placement Rate', '${college.placementRate}%', Icons.trending_up, Colors.green),
+                  _buildPlacementStat(
+                      'Placement Rate',
+                      '${college.placementRate}%',
+                      Icons.trending_up,
+                      Colors.green),
                 if (college.averagePackage != null)
-                  _buildPlacementStat('Average Package', '₹${college.averagePackage} LPA', Icons.currency_rupee, Colors.blue),
+                  _buildPlacementStat(
+                      'Average Package',
+                      '₹${college.averagePackage} LPA',
+                      Icons.currency_rupee,
+                      Colors.blue),
                 if (college.highestPackage != null)
-                  _buildPlacementStat('Highest Package', '₹${college.highestPackage} LPA', Icons.emoji_events, Colors.orange),
+                  _buildPlacementStat(
+                      'Highest Package',
+                      '₹${college.highestPackage} LPA',
+                      Icons.emoji_events,
+                      Colors.orange),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Top recruiters section
           _buildSectionTitle('Top Recruiters', Icons.business),
           const SizedBox(height: 16),
@@ -793,7 +824,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     );
   }
 
-  Widget _buildPlacementStat(String label, String value, IconData icon, Color color) {
+  Widget _buildPlacementStat(
+      String label, String value, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -820,7 +852,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                   ),
                 ),
                 Text(
-              value,
+                  value,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -837,10 +869,18 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
 
   Widget _buildRecruitersList() {
     final recruiters = [
-      'Google', 'Microsoft', 'Amazon', 'TCS', 'Infosys',
-      'Wipro', 'HCL', 'IBM', 'Accenture', 'Cognizant'
+      'Google',
+      'Microsoft',
+      'Amazon',
+      'TCS',
+      'Infosys',
+      'Wipro',
+      'HCL',
+      'IBM',
+      'Accenture',
+      'Cognizant'
     ];
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -858,16 +898,19 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: recruiters.map((recruiter) => Chip(
-          label: Text(recruiter),
-          backgroundColor: Colors.grey[100],
-          side: BorderSide(color: Colors.grey[300]!),
-        )).toList(),
+        children: recruiters
+            .map((recruiter) => Chip(
+                  label: Text(recruiter),
+                  backgroundColor: Colors.grey[100],
+                  side: BorderSide(color: Colors.grey[300]!),
+                ))
+            .toList(),
       ),
     );
   }
 
-  Widget _buildReviewsTab(BuildContext context, College college, CollegeProvider provider) {
+  Widget _buildReviewsTab(
+      BuildContext context, College college, CollegeProvider provider) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -875,7 +918,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
         children: [
           _buildSectionTitle('Student Reviews', Icons.rate_review),
           const SizedBox(height: 16),
-          
+
           // Review summary
           Container(
             padding: const EdgeInsets.all(20),
@@ -960,9 +1003,9 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Sample reviews
           _buildSampleReviews(),
         ],
@@ -975,100 +1018,105 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
       {
         'name': 'Rahul Kumar',
         'rating': 4.5,
-        'comment': 'Great infrastructure and faculty. Placement opportunities are excellent.',
+        'comment':
+            'Great infrastructure and faculty. Placement opportunities are excellent.',
         'date': '2 months ago',
       },
       {
         'name': 'Priya Sharma',
         'rating': 4.0,
-        'comment': 'Good academic environment. The campus is beautiful and well-maintained.',
+        'comment':
+            'Good academic environment. The campus is beautiful and well-maintained.',
         'date': '3 months ago',
       },
       {
         'name': 'Amit Patel',
         'rating': 4.8,
-        'comment': 'Outstanding college with excellent placement records. Highly recommended!',
+        'comment':
+            'Outstanding college with excellent placement records. Highly recommended!',
         'date': '1 month ago',
       },
     ];
-    
+
     return Column(
-      children: sampleReviews.map((review) => Container(
-      margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey[300],
-                  child: Text(
-                    review['name'].toString().substring(0, 1),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        review['name'].toString(),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        review['date'].toString(),
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
+      children: sampleReviews
+          .map((review) => Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-              ],
-            ),
+                  ],
                 ),
-                RatingBar.builder(
-                  initialRating: review['rating'] as double,
-                  minRating: 1,
-                  direction: Axis.horizontal,
-                  allowHalfRating: true,
-                  itemCount: 5,
-                  itemSize: 16.0,
-                  ignoreGestures: true,
-                  onRatingUpdate: (rating) {},
-              itemBuilder: (context, index) => const Icon(
-                Icons.star,
-                color: Colors.amber,
-              ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.grey[300],
+                          child: Text(
+                            review['name'].toString().substring(0, 1),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                review['name'].toString(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                review['date'].toString(),
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        RatingBar.builder(
+                          initialRating: review['rating'] as double,
+                          minRating: 1,
+                          direction: Axis.horizontal,
+                          allowHalfRating: true,
+                          itemCount: 5,
+                          itemSize: 16.0,
+                          ignoreGestures: true,
+                          onRatingUpdate: (rating) {},
+                          itemBuilder: (context, index) => const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      review['comment'].toString(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-              Text(
-              review['comment'].toString(),
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      )).toList(),
+              ))
+          .toList(),
     );
   }
 
@@ -1082,8 +1130,9 @@ ${college.nirfRank != null ? '🏆 NIRF Rank #${college.nirfRank}' : ''}
 ${college.placementRate != null ? '💼 ${college.placementRate}% placement rate' : ''}
 
 Check out this college on College Campus app!
-    '''.trim();
-    
+    '''
+        .trim();
+
     Share.share(shareText, subject: 'Check out ${college.name}');
   }
 
@@ -1094,7 +1143,8 @@ Check out this college on College Campus app!
   }
 
   void _openMap(String location) async {
-    final url = 'https://www.google.com/maps/search/${Uri.encodeComponent(location)}';
+    final url =
+        'https://www.google.com/maps/search/${Uri.encodeComponent(location)}';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     }
@@ -1114,7 +1164,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: Colors.white,
       child: _tabBar,

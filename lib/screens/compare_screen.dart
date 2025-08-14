@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
+import '../widgets/compare_matrix_sticky.dart';
+import '../widgets/compare_accordion.dart';
 
 class CompareScreen extends StatefulWidget {
   const CompareScreen({super.key});
@@ -17,7 +19,7 @@ class _CompareScreenState extends State<CompareScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<College> _filteredColleges = [];
   bool _isSearching = false;
-  
+
   // Track which sections are expanded
   final Map<String, bool> _expandedSections = {
     'College Info': true,
@@ -78,37 +80,37 @@ class _CompareScreenState extends State<CompareScreen> {
           ],
         ),
         body: Consumer<CollegeProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          // Initialize filtered colleges if empty
-          if (_filteredColleges.isEmpty && !_isSearching) {
-            _filteredColleges = provider.colleges;
-          }
+            // Initialize filtered colleges if empty
+            if (_filteredColleges.isEmpty && !_isSearching) {
+              _filteredColleges = provider.colleges;
+            }
 
-          return Column(
-            children: [
-              // Search bar at top
-              _buildSearchBar(),
-              
-              // Selection area
-              _buildSelectionArea(provider),
-              
-              // Comparison area
-              if (selectedColleges.isNotEmpty)
-                Expanded(
-                  child: _buildComparisonArea(),
-                )
-              else
-                Expanded(
-                  child: _buildEmptyState(),
-                ),
-            ],
-          );
-        },
-      ),
+            return Column(
+              children: [
+                // Search bar at top
+                _buildSearchBar(),
+
+                // Selection area
+                _buildSelectionArea(provider),
+
+                // Comparison area
+                if (selectedColleges.isNotEmpty)
+                  Expanded(
+                    child: _buildComparisonArea(),
+                  )
+                else
+                  Expanded(
+                    child: _buildEmptyState(),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -143,7 +145,7 @@ class _CompareScreenState extends State<CompareScreen> {
                 ),
             ],
           ),
-          
+
           // Selected colleges chips - compact
           if (selectedColleges.isNotEmpty)
             SizedBox(
@@ -162,15 +164,16 @@ class _CompareScreenState extends State<CompareScreen> {
                       ),
                       deleteIcon: const Icon(Icons.close, size: 14),
                       onDeleted: () => _removeCollege(college),
-                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                      backgroundColor:
+                          Theme.of(context).primaryColor.withOpacity(0.1),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   );
                 },
               ),
             ),
-          
-                    // Compact college selection - only show when searching
+
+          // Compact college selection - only show when searching
           if (_isSearching && selectedColleges.length < 4)
             SizedBox(
               height: 120,
@@ -188,18 +191,23 @@ class _CompareScreenState extends State<CompareScreen> {
                       itemCount: _filteredColleges.length,
                       itemBuilder: (context, index) {
                         final college = _filteredColleges[index];
-                        final isSelected = selectedCollegeIds.contains(college.id.toString());
-                        
+                        final isSelected =
+                            selectedCollegeIds.contains(college.id.toString());
+
                         return SizedBox(
                           height: 40,
                           child: ListTile(
                             dense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 8),
                             leading: CircleAvatar(
                               radius: 12,
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                              backgroundColor: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
                               child: Text(
-                                college.shortName?.substring(0, 1) ?? college.name.substring(0, 1),
+                                college.shortName?.substring(0, 1) ??
+                                    college.name.substring(0, 1),
                                 style: TextStyle(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -209,13 +217,16 @@ class _CompareScreenState extends State<CompareScreen> {
                             ),
                             title: Text(
                               college.name,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w500),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: IconButton(
                               icon: Icon(
-                                isSelected ? Icons.check_circle : Icons.add_circle_outline,
+                                isSelected
+                                    ? Icons.check_circle
+                                    : Icons.add_circle_outline,
                                 color: isSelected ? Colors.green : Colors.grey,
                                 size: 20,
                               ),
@@ -277,54 +288,95 @@ class _CompareScreenState extends State<CompareScreen> {
         children: [
           // College Headers (like collegedunia)
           _buildCollegeHeaders(),
-          
+
           const SizedBox(height: 12),
-          
+
+          // Comparison Matrix - shown when 2 or more colleges are selected
+          if (selectedColleges.length >= 2) ...[
+            const SizedBox(height: 16),
+            CompareMatrixSticky(
+              colleges: selectedColleges,
+              compareAgainstBest:
+                  true, // set to false to compare vs first selected
+            ),
+          ],
+
+          // Courses & Fees Section
+          if (selectedColleges.length >= 2) ...[
+            const SizedBox(height: 16),
+            CompareAccordion(
+              title: 'Courses & Fees',
+              colleges: selectedColleges,
+              rows: [
+                CompareRows.fees(),
+                CompareRows.courseName(),
+                CompareRows.acceptedExams(
+                  onLinkTap: (i) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Open Admission Details for ${selectedColleges[i].name}'),
+                      ),
+                    );
+                  },
+                ),
+                CompareRows.eligibility('10+2 with 75% + JEE Advanced'),
+                CompareRows.cutoff(List.generate(selectedColleges.length, (i) {
+                  // Generate some sample cutoff data
+                  final cutoffs = ['171 (JEE-Advanced)', '125 (JEE-Advanced)', '198 (JEE-Advanced)'];
+                  return i < cutoffs.length ? cutoffs[i] : '—';
+                })),
+                CompareRows.credential('Degree'),
+                CompareRows.mode('On Campus'),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // College Info Section
           _buildCollapsibleSection(
             'College Info',
             Icons.info_outline,
             _buildCollegeInfoComparison(),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // College Rating & Reviews Section
           _buildCollapsibleSection(
             'College Rating & Reviews',
             Icons.star,
             _buildRatingReviewsComparison(),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Courses & Fees Section
           _buildCollapsibleSection(
             'Courses & Fees',
             Icons.school,
             _buildCoursesFeesComparison(),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // College Ranking Section
           _buildCollapsibleSection(
             'College Ranking',
             Icons.workspace_premium,
             _buildRankingComparison(),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // College Placements Section
           _buildCollapsibleSection(
             'College Placements',
             Icons.work,
             _buildPlacementsComparison(),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // College Facilities Section
           _buildCollapsibleSection(
             'College Facilities',
@@ -344,12 +396,13 @@ class _CompareScreenState extends State<CompareScreen> {
         _filteredColleges = [];
       } else {
         // Filter colleges based on search query
-        _filteredColleges = context.read<CollegeProvider>().colleges.where((college) {
+        _filteredColleges =
+            context.read<CollegeProvider>().colleges.where((college) {
           return college.name.toLowerCase().contains(query) ||
-                 college.shortName?.toLowerCase().contains(query) == true ||
-                 college.city.toLowerCase().contains(query) ||
-                 college.state.toLowerCase().contains(query) ||
-                 college.type.toLowerCase().contains(query);
+              college.shortName?.toLowerCase().contains(query) == true ||
+              college.city.toLowerCase().contains(query) ||
+              college.state.toLowerCase().contains(query) ||
+              college.type.toLowerCase().contains(query);
         }).toList();
       }
     });
@@ -391,7 +444,8 @@ class _CompareScreenState extends State<CompareScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            borderSide:
+                BorderSide(color: Theme.of(context).primaryColor, width: 2),
           ),
           filled: true,
           fillColor: Colors.grey[50],
@@ -541,7 +595,7 @@ class _CompareScreenState extends State<CompareScreen> {
 
   Widget _buildCollapsibleSection(String title, IconData icon, Widget content) {
     final isExpanded = _expandedSections[title] ?? false;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -571,8 +625,10 @@ class _CompareScreenState extends State<CompareScreen> {
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(12),
                   topRight: const Radius.circular(12),
-                  bottomLeft: isExpanded ? Radius.zero : const Radius.circular(12),
-                  bottomRight: isExpanded ? Radius.zero : const Radius.circular(12),
+                  bottomLeft:
+                      isExpanded ? Radius.zero : const Radius.circular(12),
+                  bottomRight:
+                      isExpanded ? Radius.zero : const Radius.circular(12),
                 ),
               ),
               child: Row(
@@ -590,7 +646,8 @@ class _CompareScreenState extends State<CompareScreen> {
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                    child: Icon(Icons.keyboard_arrow_down,
+                        color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -653,10 +710,17 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('Estd Date', selectedColleges.map((c) => 'Estd ${c.establishedYear?.toString() ?? 'N/A'}').toList()),
-          _buildComparisonRow('Ownership', selectedColleges.map((c) => 'Autonomous University').toList()),
-          _buildComparisonRow('Approved by', selectedColleges.map((c) => 'AICTE').toList()),
-          _buildComparisonRow('Total Course', selectedColleges.map((c) => '5').toList()),
+          _buildComparisonRow(
+              'Estd Date',
+              selectedColleges
+                  .map((c) => 'Estd ${c.establishedYear?.toString() ?? 'N/A'}')
+                  .toList()),
+          _buildComparisonRow('Ownership',
+              selectedColleges.map((c) => 'Autonomous University').toList()),
+          _buildComparisonRow(
+              'Approved by', selectedColleges.map((c) => 'AICTE').toList()),
+          _buildComparisonRow(
+              'Total Course', selectedColleges.map((c) => '5').toList()),
         ],
       ),
     );
@@ -669,9 +733,21 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('Reviews', selectedColleges.map((c) => '${c.reviewCount ?? 0} Reviews').toList()),
-          _buildComparisonRow('Overall Rating', selectedColleges.map((c) => '${c.ratingAsDouble.toStringAsFixed(1)}/5').toList()),
-          _buildComparisonRow('Academic', selectedColleges.map((c) => '${c.ratingAsDouble.toStringAsFixed(1)}/5').toList()),
+          _buildComparisonRow(
+              'Reviews',
+              selectedColleges
+                  .map((c) => '${c.reviewCount ?? 0} Reviews')
+                  .toList()),
+          _buildComparisonRow(
+              'Overall Rating',
+              selectedColleges
+                  .map((c) => '${c.ratingAsDouble.toStringAsFixed(1)}/5')
+                  .toList()),
+          _buildComparisonRow(
+              'Academic',
+              selectedColleges
+                  .map((c) => '${c.ratingAsDouble.toStringAsFixed(1)}/5')
+                  .toList()),
         ],
       ),
     );
@@ -684,13 +760,36 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('Fees', selectedColleges.map((c) => c.fees != null ? '₹${(c.feesAsDouble / 1000).toStringAsFixed(0)}K 1st Yr Fees' : 'N/A').toList()),
-          _buildComparisonRow('Course Name', selectedColleges.map((c) => 'Bachelor of Technology [B.Tech]').toList()),
-          _buildComparisonRow('Accepted Exams', selectedColleges.map((c) => 'JEE Advanced').toList()),
-          _buildComparisonRow('Eligibility Criteria', selectedColleges.map((c) => '10+2 with 75% + JEE Advanced').toList()),
-          _buildComparisonRow('Cutoff', selectedColleges.map((c) => c.cutoffScore != null ? '${c.cutoffScore} (JEE-Advanced)' : 'N/A').toList()),
-          _buildComparisonRow('Course Credential', selectedColleges.map((c) => 'Degree').toList()),
-          _buildComparisonRow('Mode', selectedColleges.map((c) => 'On Campus').toList()),
+          _buildComparisonRow(
+              'Fees',
+              selectedColleges
+                  .map((c) => c.fees != null
+                      ? '₹${(c.feesAsDouble / 1000).toStringAsFixed(0)}K 1st Yr Fees'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Course Name',
+              selectedColleges
+                  .map((c) => 'Bachelor of Technology [B.Tech]')
+                  .toList()),
+          _buildComparisonRow('Accepted Exams',
+              selectedColleges.map((c) => 'JEE Advanced').toList()),
+          _buildComparisonRow(
+              'Eligibility Criteria',
+              selectedColleges
+                  .map((c) => '10+2 with 75% + JEE Advanced')
+                  .toList()),
+          _buildComparisonRow(
+              'Cutoff',
+              selectedColleges
+                  .map((c) => c.cutoffScore != null
+                      ? '${c.cutoffScore} (JEE-Advanced)'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow('Course Credential',
+              selectedColleges.map((c) => 'Degree').toList()),
+          _buildComparisonRow(
+              'Mode', selectedColleges.map((c) => 'On Campus').toList()),
         ],
       ),
     );
@@ -703,9 +802,22 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('NIRF', selectedColleges.map((c) => c.nirfRank != null ? '#${c.nirfRank} (Overall 2024)' : 'N/A').toList()),
-          _buildComparisonRow('NIRF Innovation', selectedColleges.map((c) => c.nirfRank != null ? '#${(c.nirfRank! + 1)} (Overall 2024)' : 'N/A').toList()),
-          _buildComparisonRow('Financial Express', selectedColleges.map((c) => '#15 (Overall 2019)').toList()),
+          _buildComparisonRow(
+              'NIRF',
+              selectedColleges
+                  .map((c) => c.nirfRank != null
+                      ? '#${c.nirfRank} (Overall 2024)'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'NIRF Innovation',
+              selectedColleges
+                  .map((c) => c.nirfRank != null
+                      ? '#${(c.nirfRank! + 1)} (Overall 2024)'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow('Financial Express',
+              selectedColleges.map((c) => '#15 (Overall 2019)').toList()),
         ],
       ),
     );
@@ -718,9 +830,22 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('Highest Package', selectedColleges.map((c) => c.highestPackage != null ? 'INR ${(double.tryParse(c.highestPackage!) ?? 0 / 10000000).toStringAsFixed(2)} Cr' : 'N/A').toList()),
-          _buildComparisonRow('Average Package', selectedColleges.map((c) => c.averagePackage != null ? 'INR ${(double.tryParse(c.averagePackage!) ?? 0 / 100000).toStringAsFixed(2)} L' : 'N/A').toList()),
-          _buildComparisonRow('Company', selectedColleges.map((c) => 'Amazon, Cisco, Citicorp').toList()),
+          _buildComparisonRow(
+              'Highest Package',
+              selectedColleges
+                  .map((c) => c.highestPackage != null
+                      ? 'INR ${(double.tryParse(c.highestPackage!) ?? 0 / 10000000).toStringAsFixed(2)} Cr'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Average Package',
+              selectedColleges
+                  .map((c) => c.averagePackage != null
+                      ? 'INR ${(double.tryParse(c.averagePackage!) ?? 0 / 100000).toStringAsFixed(2)} L'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow('Company',
+              selectedColleges.map((c) => 'Amazon, Cisco, Citicorp').toList()),
         ],
       ),
     );
@@ -731,11 +856,19 @@ class _CompareScreenState extends State<CompareScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildComparisonRow('Full Name', selectedColleges.map((c) => c.name).toList()),
-          _buildComparisonRow('Location', selectedColleges.map((c) => '${c.city}, ${c.state}').toList()),
-          _buildComparisonRow('Type', selectedColleges.map((c) => c.type ?? 'N/A').toList()),
-          _buildComparisonRow('Established', selectedColleges.map((c) => c.establishedYear?.toString() ?? 'N/A').toList()),
-          _buildComparisonRow('Affiliation', selectedColleges.map((c) => c.affiliation ?? 'N/A').toList()),
+          _buildComparisonRow(
+              'Full Name', selectedColleges.map((c) => c.name).toList()),
+          _buildComparisonRow('Location',
+              selectedColleges.map((c) => '${c.city}, ${c.state}').toList()),
+          _buildComparisonRow(
+              'Type', selectedColleges.map((c) => c.type ?? 'N/A').toList()),
+          _buildComparisonRow(
+              'Established',
+              selectedColleges
+                  .map((c) => c.establishedYear?.toString() ?? 'N/A')
+                  .toList()),
+          _buildComparisonRow('Affiliation',
+              selectedColleges.map((c) => c.affiliation ?? 'N/A').toList()),
         ],
       ),
     );
@@ -746,10 +879,29 @@ class _CompareScreenState extends State<CompareScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildComparisonRow('NIRF Rank', selectedColleges.map((c) => c.nirfRank != null ? '#${c.nirfRank}' : 'N/A').toList()),
-          _buildComparisonRow('Overall Rank', selectedColleges.map((c) => c.overallRank != null ? '#${c.overallRank}' : 'N/A').toList()),
-          _buildComparisonRow('Rating', selectedColleges.map((c) => c.ratingAsDouble > 0 ? c.ratingAsDouble.toStringAsFixed(1) : 'N/A').toList()),
-          _buildComparisonRow('Reviews', selectedColleges.map((c) => c.reviewCount?.toString() ?? 'N/A').toList()),
+          _buildComparisonRow(
+              'NIRF Rank',
+              selectedColleges
+                  .map((c) => c.nirfRank != null ? '#${c.nirfRank}' : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Overall Rank',
+              selectedColleges
+                  .map((c) =>
+                      c.overallRank != null ? '#${c.overallRank}' : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Rating',
+              selectedColleges
+                  .map((c) => c.ratingAsDouble > 0
+                      ? c.ratingAsDouble.toStringAsFixed(1)
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Reviews',
+              selectedColleges
+                  .map((c) => c.reviewCount?.toString() ?? 'N/A')
+                  .toList()),
         ],
       ),
     );
@@ -760,9 +912,22 @@ class _CompareScreenState extends State<CompareScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildComparisonRow('Fees', selectedColleges.map((c) => c.fees != null ? '₹${(c.feesAsDouble / 1000).toStringAsFixed(0)}K' : 'N/A').toList()),
-          _buildComparisonRow('Period', selectedColleges.map((c) => c.feesPeriod ?? 'N/A').toList()),
-          _buildComparisonRow('Hostel Fees', selectedColleges.map((c) => c.hostelFees != null ? '₹${(double.tryParse(c.hostelFees!) ?? 0 / 1000).toStringAsFixed(0)}K' : 'N/A').toList()),
+          _buildComparisonRow(
+              'Fees',
+              selectedColleges
+                  .map((c) => c.fees != null
+                      ? '₹${(c.feesAsDouble / 1000).toStringAsFixed(0)}K'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow('Period',
+              selectedColleges.map((c) => c.feesPeriod ?? 'N/A').toList()),
+          _buildComparisonRow(
+              'Hostel Fees',
+              selectedColleges
+                  .map((c) => c.hostelFees != null
+                      ? '₹${(double.tryParse(c.hostelFees!) ?? 0 / 1000).toStringAsFixed(0)}K'
+                      : 'N/A')
+                  .toList()),
         ],
       ),
     );
@@ -773,9 +938,26 @@ class _CompareScreenState extends State<CompareScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildComparisonRow('Placement Rate', selectedColleges.map((c) => c.placementRate != null ? '${c.placementRate}%' : 'N/A').toList()),
-          _buildComparisonRow('Avg Package', selectedColleges.map((c) => c.averagePackage != null ? '₹${(double.tryParse(c.averagePackage!) ?? 0 / 100000).toStringAsFixed(1)} LPA' : 'N/A').toList()),
-          _buildComparisonRow('Highest Package', selectedColleges.map((c) => c.highestPackage != null ? '₹${(double.tryParse(c.highestPackage!) ?? 0 / 100000).toStringAsFixed(1)} LPA' : 'N/A').toList()),
+          _buildComparisonRow(
+              'Placement Rate',
+              selectedColleges
+                  .map((c) =>
+                      c.placementRate != null ? '${c.placementRate}%' : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Avg Package',
+              selectedColleges
+                  .map((c) => c.averagePackage != null
+                      ? '₹${(double.tryParse(c.averagePackage!) ?? 0 / 100000).toStringAsFixed(1)} LPA'
+                      : 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Highest Package',
+              selectedColleges
+                  .map((c) => c.highestPackage != null
+                      ? '₹${(double.tryParse(c.highestPackage!) ?? 0 / 100000).toStringAsFixed(1)} LPA'
+                      : 'N/A')
+                  .toList()),
         ],
       ),
     );
@@ -786,8 +968,16 @@ class _CompareScreenState extends State<CompareScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildComparisonRow('Admission Process', selectedColleges.map((c) => c.admissionProcess ?? 'N/A').toList()),
-          _buildComparisonRow('Cutoff Score', selectedColleges.map((c) => c.cutoffScore?.toString() ?? 'N/A').toList()),
+          _buildComparisonRow(
+              'Admission Process',
+              selectedColleges
+                  .map((c) => c.admissionProcess ?? 'N/A')
+                  .toList()),
+          _buildComparisonRow(
+              'Cutoff Score',
+              selectedColleges
+                  .map((c) => c.cutoffScore?.toString() ?? 'N/A')
+                  .toList()),
         ],
       ),
     );
@@ -800,8 +990,16 @@ class _CompareScreenState extends State<CompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildComparisonRow('Hostel Available', selectedColleges.map((c) => c.hasHostel == true ? 'Yes' : 'No').toList()),
-          _buildComparisonRow('Website', selectedColleges.map((c) => c.website != null ? 'Available' : 'N/A').toList()),
+          _buildComparisonRow(
+              'Hostel Available',
+              selectedColleges
+                  .map((c) => c.hasHostel == true ? 'Yes' : 'No')
+                  .toList()),
+          _buildComparisonRow(
+              'Website',
+              selectedColleges
+                  .map((c) => c.website != null ? 'Available' : 'N/A')
+                  .toList()),
         ],
       ),
     );
@@ -863,7 +1061,8 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   void _addCollege(College college) {
-    if (selectedColleges.length < 4 && !selectedCollegeIds.contains(college.id.toString())) {
+    if (selectedColleges.length < 4 &&
+        !selectedCollegeIds.contains(college.id.toString())) {
       setState(() {
         selectedColleges.add(college);
         selectedCollegeIds.add(college.id.toString());
@@ -909,7 +1108,7 @@ class _CompareScreenState extends State<CompareScreen> {
       );
       return;
     }
-    
+
     // The comparison is already visible, just scroll to it
     // You could also show a success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -919,4 +1118,4 @@ class _CompareScreenState extends State<CompareScreen> {
       ),
     );
   }
-} 
+}
