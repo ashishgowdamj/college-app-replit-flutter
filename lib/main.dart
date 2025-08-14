@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import 'firebase_options.dart';
+
+// Providers
 import 'services/college_provider.dart';
+import 'services/profile_provider.dart';
+
+// Screens
 import 'screens/home_screen.dart';
 import 'screens/college_detail_screen.dart';
 import 'screens/search_screen.dart';
@@ -11,6 +17,7 @@ import 'screens/favorites_screen.dart';
 import 'screens/predictor_screen.dart';
 import 'screens/exams_screen.dart';
 import 'screens/compare_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +35,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CollegeProvider()),
+        // Load profile from SharedPreferences on startup
+        ChangeNotifierProvider(create: (_) => ProfileProvider()..load()),
       ],
       child: MaterialApp.router(
         title: 'College Campus',
@@ -90,11 +99,12 @@ class MyApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(color: Color(0xFF4F46E5), width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: Colors.white,
@@ -109,29 +119,29 @@ class MyApp extends StatelessWidget {
         builder: (context, child) {
           return WillPopScope(
             onWillPop: () async {
-              // Check if we can pop the current route
               if (GoRouter.of(context).canPop()) {
                 GoRouter.of(context).pop();
-                return false; // Don't close the app
+                return false;
               }
-              // If we can't pop, show a dialog to confirm app exit
               return await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Exit App'),
-                  content: const Text('Are you sure you want to exit the app?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Exit App'),
+                      content:
+                          const Text('Are you sure you want to exit the app?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Exit'),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Exit'),
-                    ),
-                  ],
-                ),
-              ) ?? false;
+                  ) ??
+                  false;
             },
             child: child!,
           );
@@ -201,6 +211,11 @@ final GoRouter _router = GoRouter(
         final id = state.pathParameters['id']!;
         return CollegeDetailScreen(collegeId: id);
       },
+    ),
+    // NEW: Profile route
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
