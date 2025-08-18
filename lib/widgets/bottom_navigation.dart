@@ -11,38 +11,32 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: _getCurrentIndex(),
-      onTap: (index) => _onItemTapped(context, index),
-      selectedItemColor: Theme.of(context).primaryColor,
-      unselectedItemColor: Colors.grey[600],
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: 'Search',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.quiz),
-          label: 'Exams',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.psychology),
-          label: 'Predictor',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: 'Favorites',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.compare_arrows),
-          label: 'Compare',
-        ),
-      ],
+    final idx = _getCurrentIndex();
+    return SafeArea(
+      top: false,
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: idx,
+        onTap: (i) => _onItemTapped(context, i),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz_rounded),
+            label: 'Exams',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.auto_graph),
+            label: 'Predictor',
+          ),
+        ],
+      ),
     );
   }
 
@@ -57,10 +51,6 @@ class BottomNavigation extends StatelessWidget {
         return 2;
       case '/predictor':
         return 3;
-      case '/favorites':
-        return 4;
-      case '/compare':
-        return 5;
       default:
         return 0;
     }
@@ -79,12 +69,6 @@ class BottomNavigation extends StatelessWidget {
         break;
       case 3:
         context.go('/predictor');
-        break;
-      case 4:
-        context.go('/favorites');
-        break;
-      case 5:
-        context.go('/compare');
         break;
     }
   }

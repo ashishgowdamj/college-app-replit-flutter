@@ -1,16 +1,20 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../models/college.dart';
 import '../models/review.dart';
 import 'api_service.dart';
+import 'firebase_service.dart';
 
 class CollegeProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final FirebaseService _firebaseService = FirebaseService();
   
   List<College> _colleges = [];
   final List<College> _favoriteColleges = [];
   College? _selectedCollege;
   List<Review> _selectedCollegeReviews = [];
   bool _isLoading = false;
+  bool _isRefreshing = false;
   String? _error;
   
   // Search and filter state
@@ -19,12 +23,36 @@ class CollegeProvider with ChangeNotifier {
   String? _selectedCourseType;
   int? _minFees;
   int? _maxFees;
+  String? _locationQuery; // city/area free-text filter
   final Map<String, dynamic> _currentFilters = {};
   
   // Pagination state
   bool _hasMoreData = true;
-  int _currentPage = 0;
   static const int _pageSize = 20;
+  Timer? _searchDebounce;
+  Map<String, dynamic>? _cursor; // Firestore pagination cursor
+
+  // Normalize common city/state synonyms and whitespace
+  String _normalizePlace(String? s) {
+    final x = (s ?? '').trim().toLowerCase();
+    if (x.isEmpty) return x;
+    // Basic synonyms
+    const synonyms = {
+      'bengaluru': 'bangalore',
+      'bengalooru': 'bangalore',
+      'mumbai': 'mumbai',
+      'bombay': 'mumbai',
+      'kolkata': 'kolkata',
+      'calcutta': 'kolkata',
+      'pune': 'pune',
+      'delhi': 'delhi',
+      'new delhi': 'delhi',
+      'chennai': 'chennai',
+      'madras': 'chennai',
+      'bengaluru, karnataka': 'bangalore, karnataka',
+    };
+    return synonyms[x] ?? x;
+  }
 
   // Getters
   List<College> get colleges => _colleges;
@@ -32,20 +60,46 @@ class CollegeProvider with ChangeNotifier {
   College? get selectedCollege => _selectedCollege;
   List<Review> get selectedCollegeReviews => _selectedCollegeReviews;
   bool get isLoading => _isLoading;
+  bool get isRefreshing => _isRefreshing;
   String? get error => _error;
   String get searchQuery => _searchQuery;
   String? get selectedState => _selectedState;
   String? get selectedCourseType => _selectedCourseType;
   int? get minFees => _minFees;
   int? get maxFees => _maxFees;
+  String? get locationQuery => _locationQuery;
   bool get hasMoreData => _hasMoreData;
   bool get isLoadingMore => _isLoading && _colleges.isNotEmpty;
   Map<String, dynamic> get currentFilters => _currentFilters;
 
   // Search and filter methods
-  void updateSearchQuery(String query) {
+  Future<void> updateSearchQuery(String query) async {
+    print('=== updateSearchQuery() called with query: "$query" ===');
+    
+    // Only update if query has actually changed
+    if (_searchQuery == query) {
+      print('Search query unchanged, skipping update');
+      return;
+    }
+    
+    print('Updating search query from "$_searchQuery" to "$query"');
     _searchQuery = query;
+    
+    // Reset pagination when search changes but DO NOT clear current results to avoid flicker
+    _resetPagination();
+    _isRefreshing = true;
     notifyListeners();
+
+    // Debounce fetch centrally so all pages share the same behavior
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        await fetchColleges(refresh: true);
+      } catch (e, stackTrace) {
+        print('Error in debounced fetch: $e');
+        print('Stack trace: $stackTrace');
+      }
+    });
   }
 
   void setFilter(String key, dynamic value) {
@@ -63,6 +117,9 @@ class CollegeProvider with ChangeNotifier {
         break;
       case 'maxFees':
         _maxFees = value;
+        break;
+      case 'location':
+        _locationQuery = value;
         break;
     }
     notifyListeners();
@@ -84,6 +141,9 @@ class CollegeProvider with ChangeNotifier {
       case 'maxFees':
         _maxFees = null;
         break;
+      case 'location':
+        _locationQuery = null;
+        break;
     }
     notifyListeners();
   }
@@ -93,11 +153,13 @@ class CollegeProvider with ChangeNotifier {
     String? courseType,
     int? minFees,
     int? maxFees,
+    String? locationQuery,
   }) {
     _selectedState = state;
     _selectedCourseType = courseType;
     _minFees = minFees;
     _maxFees = maxFees;
+    _locationQuery = locationQuery;
     
     // Update current filters map
     _currentFilters.clear();
@@ -105,6 +167,9 @@ class CollegeProvider with ChangeNotifier {
     if (courseType != null) _currentFilters['type'] = courseType;
     if (minFees != null) _currentFilters['minFees'] = minFees;
     if (maxFees != null) _currentFilters['maxFees'] = maxFees;
+    if (locationQuery != null && locationQuery.isNotEmpty) {
+      _currentFilters['location'] = locationQuery;
+    }
     
     notifyListeners();
   }
@@ -114,121 +179,251 @@ class CollegeProvider with ChangeNotifier {
     _selectedCourseType = null;
     _minFees = null;
     _maxFees = null;
+    _locationQuery = null;
     _currentFilters.clear();
     _resetPagination();
     notifyListeners();
   }
   
   void _resetPagination() {
-    _currentPage = 0;
     _hasMoreData = true;
+    _cursor = null;
   }
 
   // Fetch colleges with current filters
   Future<void> fetchColleges({bool refresh = false}) async {
+    print('=== fetchColleges called, refresh: $refresh ===');
+    
     if (refresh) {
+      print('Resetting pagination (keeping current list visible during refresh)');
       _resetPagination();
-      _colleges = [];
+      _isRefreshing = true;
+    } else if (!_hasMoreData) {
+      print('No more data to load');
+      return;
     }
     
-    if (!_hasMoreData && !refresh) return;
-    
     _setLoading(true);
+    _error = null;
+    
     try {
-      final newColleges = await _apiService.getColleges(
-        search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        state: _selectedState,
-        courseType: _selectedCourseType,
-        minFees: _minFees,
-        maxFees: _maxFees,
+      print('Fetching colleges from Firestore with cursor-based pagination...');
+      final page = await _firebaseService.getCollegesPaginated(
         limit: _pageSize,
-        offset: refresh ? 0 : _currentPage * _pageSize,
+        state: _selectedState,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        cursor: refresh ? null : _cursor,
       );
+      final newColleges = page.items;
+      _cursor = page.nextCursor;
+      print('Fetched ${newColleges.length} colleges from Firestore; hasMore: ${page.hasMore}');
       
-      // Apply client-side filtering for mock data
-      List<College> filteredColleges = newColleges;
-      
-      // Apply search filter
+      // Apply client-side filtering if needed
+      List<College> filteredColleges = List.from(newColleges);
+      print('Before filtering: ${filteredColleges.length} colleges');
+
+      // Apply search filter client-side (useful when backend falls back to mock data)
       if (_searchQuery.isNotEmpty) {
-        final searchLower = _searchQuery.toLowerCase();
-        filteredColleges = filteredColleges.where((college) =>
-          college.name.toLowerCase().contains(searchLower) ||
-          (college.shortName?.toLowerCase().contains(searchLower) ?? false) ||
-          college.location.toLowerCase().contains(searchLower) ||
-          college.city.toLowerCase().contains(searchLower) ||
-          college.state.toLowerCase().contains(searchLower) ||
-          (college.description?.toLowerCase().contains(searchLower) ?? false)
-        ).toList();
+        final q = _searchQuery.toLowerCase();
+        final originalCount = filteredColleges.length;
+        filteredColleges = filteredColleges.where((college) {
+          final hay = [
+            college.name,
+            college.shortName ?? '',
+            college.location,
+            college.city,
+            college.state,
+            college.type,
+          ].join(' ').toLowerCase();
+          final include = hay.contains(q);
+          if (!include) {
+            // Debug which colleges are filtered out by search
+            // print('Filtering out by search ("$q"): ${college.name}');
+          }
+          return include;
+        }).toList();
+        print('After search filtering: ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
       }
       
-      // Apply course type filter
-      if (_selectedCourseType != null && _selectedCourseType!.isNotEmpty) {
-        if (_selectedCourseType!.toLowerCase() == 'medical') {
-          filteredColleges = filteredColleges.where((college) =>
-            college.admissionProcess?.toLowerCase().contains('neet') ?? false
-          ).toList();
-        } else if (_selectedCourseType!.toLowerCase() == 'management') {
-          filteredColleges = filteredColleges.where((college) =>
-            (college.admissionProcess?.toLowerCase().contains('cat') ?? false) ||
-            (college.admissionProcess?.toLowerCase().contains('xat') ?? false)
-          ).toList();
-        } else if (_selectedCourseType!.toLowerCase() == 'iit') {
-          filteredColleges = filteredColleges.where((college) =>
-            college.name.toLowerCase().contains('iit') ||
-            (college.admissionProcess?.toLowerCase().contains('jee advanced') ?? false)
-          ).toList();
-        } else if (_selectedCourseType!.toLowerCase() == 'government') {
-          filteredColleges = filteredColleges.where((college) =>
-            college.type.toLowerCase() == 'government'
-          ).toList();
-        } else if (_selectedCourseType!.toLowerCase() == 'private') {
-          filteredColleges = filteredColleges.where((college) =>
-            college.type.toLowerCase() == 'private'
-          ).toList();
+      // Apply course type filter if selected
+      if (_selectedCourseType != null) {
+        print('Filtering by course type: $_selectedCourseType');
+        final originalCount = filteredColleges.length;
+        
+        final ct = _selectedCourseType!.toLowerCase();
+        if (ct == 'engineering' || ct.contains('b.tech') || ct.contains('btech') || ct == 'be' || ct.contains('engineering')) {
+          filteredColleges = filteredColleges.where((college) {
+            final name = college.name.toLowerCase();
+            final type = college.type.toLowerCase();
+            final admission = (college.admissionProcess ?? '').toLowerCase();
+            final jee = admission.contains('jee');
+            final mht = admission.contains('mht-cet') || admission.contains('mhtcet');
+            final engKeywords = name.contains('engineering') ||
+                name.contains('institute of technology') ||
+                name.contains('technology') ||
+                type.contains('engineering') ||
+                type.contains('technical') ||
+                type.contains('iit') || type.contains('nit') || type.contains('iiit');
+            final matches = jee || mht || engKeywords;
+            if (!matches) {
+              print('Filtering out college (engineering): ${college.name} - Admission: ${college.admissionProcess}, Type: ${college.type}');
+            }
+            return matches;
+          }).toList();
+        } else if (ct == 'medical' || ct.contains('mbbs') || ct.contains('medicine')) {
+          filteredColleges = filteredColleges.where((college) {
+            final matches = college.admissionProcess?.toLowerCase().contains('neet') ?? false;
+            if (!matches) {
+              print('Filtering out college (medical): ${college.name} - Admission: ${college.admissionProcess}');
+            }
+            return matches;
+          }).toList();
+        } else if (ct == 'management' || ct.contains('mba')) {
+          filteredColleges = filteredColleges.where((college) {
+            final admission = college.admissionProcess?.toLowerCase() ?? '';
+            final matches = admission.contains('cat') || admission.contains('xat');
+            if (!matches) {
+              print('Filtering out college (management): ${college.name} - Admission: ${college.admissionProcess}');
+            }
+            return matches;
+          }).toList();
+        } else if (ct == 'iit') {
+          filteredColleges = filteredColleges.where((college) {
+            final matches = college.name.toLowerCase().contains('iit') || 
+                          (college.admissionProcess?.toLowerCase().contains('jee advanced') ?? false);
+            if (!matches) {
+              print('Filtering out college (IIT): ${college.name} - Admission: ${college.admissionProcess}');
+            }
+            return matches;
+          }).toList();
+        } else if (ct == 'nit') {
+          filteredColleges = filteredColleges.where((college) {
+            final matches = college.name.toLowerCase().contains('nit') || 
+                          (college.admissionProcess?.toLowerCase().contains('jee main') ?? false);
+            if (!matches) {
+              print('Filtering out college (NIT): ${college.name} - Admission: ${college.admissionProcess}');
+            }
+            return matches;
+          }).toList();
         }
+        
+        print('After course type filtering: ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
       }
-      
-      // Apply state filter
+
+      // Apply state filter if selected (client-side)
       if (_selectedState != null && _selectedState!.isNotEmpty) {
-        filteredColleges = filteredColleges.where((college) =>
-          college.state.toLowerCase() == _selectedState!.toLowerCase()
-        ).toList();
+        final s = _selectedState!.toLowerCase();
+        final originalCount = filteredColleges.length;
+        filteredColleges = filteredColleges.where((college) {
+          final include = (college.state.toLowerCase() == s) ||
+              college.location.toLowerCase().contains(s) ||
+              college.city.toLowerCase() == s;
+        
+          if (!include) {
+            // print('Filtering out by state ("$s"): ${college.name} - state: ${college.state}');
+          }
+          return include;
+        }).toList();
+        print('After state filtering: ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
+      }
+
+      // Apply location free-text filter (client-side)
+      if (_locationQuery != null && _locationQuery!.trim().isNotEmpty) {
+        final lq = _locationQuery!.toLowerCase().trim();
+        final originalCount = filteredColleges.length;
+        filteredColleges = filteredColleges.where((college) {
+          final hay = [college.city, college.state, college.location]
+              .join(' ').toLowerCase();
+          final include = hay.contains(lq);
+          return include;
+        }).toList();
+        print('After location filtering ("$lq"): ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
       }
       
-      // Apply fees filter
+      // Apply fees filter if set
       if (_minFees != null && _minFees! > 0) {
+        final originalCount = filteredColleges.length;
         filteredColleges = filteredColleges.where((college) {
           final fees = double.tryParse(college.fees ?? '0') ?? 0;
-          return fees >= _minFees!;
+          final include = fees >= _minFees!;
+          if (!include) {
+            print('Filtering out college (min fees): ${college.name} - Fees: ${college.fees} (min: $_minFees)');
+          }
+          return include;
         }).toList();
+        print('After min fees filtering: ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
       }
       
       if (_maxFees != null && _maxFees! > 0) {
+        final originalCount = filteredColleges.length;
         filteredColleges = filteredColleges.where((college) {
           final fees = double.tryParse(college.fees ?? '0') ?? 0;
-          return fees <= _maxFees!;
+          final include = fees <= _maxFees!;
+          if (!include) {
+            print('Filtering out college (max fees): ${college.name} - Fees: ${college.fees} (max: $_maxFees)');
+          }
+          return include;
         }).toList();
+        print('After max fees filtering: ${filteredColleges.length} colleges (filtered out ${originalCount - filteredColleges.length})');
       }
       
+      // Prioritize by location: city match first, then state match, then others
+      if ((_locationQuery != null && _locationQuery!.trim().isNotEmpty) ||
+          (_selectedState != null && _selectedState!.trim().isNotEmpty)) {
+        final normQuery = _normalizePlace(_locationQuery);
+        final normState = _normalizePlace(_selectedState);
+        int score(College c) {
+          final city = _normalizePlace(c.city);
+          final state = _normalizePlace(c.state);
+          final hay = _normalizePlace('${c.city} ${c.state} ${c.location}');
+          int s = 0;
+          if (normQuery.isNotEmpty) {
+            if (city == normQuery) s = 3;
+            else if (hay.contains(normQuery)) s = 1; // substring match
+          }
+          if (normState.isNotEmpty) {
+            if (state == normState) s = s < 2 ? 2 : s; // keep higher
+          }
+          return s;
+        }
+        filteredColleges.sort((a, b) {
+          final sb = score(b);
+          final sa = score(a);
+          if (sb != sa) return sb.compareTo(sa);
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      }
+
+      print('Final filtered colleges count: ${filteredColleges.length}');
+      
       if (refresh) {
+        // Replace the list after fresh data arrives
         _colleges = filteredColleges;
       } else {
         _colleges.addAll(filteredColleges);
       }
       
-      _hasMoreData = filteredColleges.length >= _pageSize;
-      if (_hasMoreData) {
-        _currentPage++;
-      }
+      _hasMoreData = page.hasMore;
       
       _error = null;
-    } catch (e) {
-      _error = e.toString();
-      if (refresh) {
-        _colleges = [];
+      print('Updated colleges list. Total colleges: ${_colleges.length}, hasMoreData: $_hasMoreData');
+      
+      // Print first few colleges for debugging
+      final count = _colleges.length > 3 ? 3 : _colleges.length;
+      print('First $count colleges:');
+      for (var i = 0; i < count; i++) {
+        final college = _colleges[i];
+        print('${i + 1}. ${college.name} (ID: ${college.id}, Admission: ${college.admissionProcess}, Fees: ${college.fees})');
       }
+      
+    } catch (e, stackTrace) {
+      print('Error in fetchColleges: $e');
+      print('Stack trace: $stackTrace');
+      _error = e.toString();
     } finally {
+      _isRefreshing = false;
       _setLoading(false);
+      print('=== fetchColleges completed ===');
     }
   }
   
@@ -319,5 +514,11 @@ class CollegeProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }

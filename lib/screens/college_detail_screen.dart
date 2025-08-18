@@ -5,6 +5,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
 
@@ -60,17 +61,9 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                     }
                   },
                 ),
+                title: const Text('College Details'),
               ),
-              body: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading college details...'),
-                  ],
-                ),
-              ),
+              body: _buildDetailsSkeleton(context),
             );
           }
 
@@ -144,6 +137,99 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     );
   }
 
+  // Shimmer skeletons for loading state
+  Widget _buildHeroImageSkeleton() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(color: Colors.grey[300]),
+    );
+  }
+
+  Widget _buildDetailsSkeleton(BuildContext context) {
+    final base = Colors.grey[300]!;
+    final highlight = Colors.grey[100]!;
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: ListView(
+        children: [
+          // Hero image area
+          Container(height: 280, color: base),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title line
+                Container(height: 22, width: double.infinity, color: base),
+                const SizedBox(height: 12),
+                // Location row
+                Row(
+                  children: [
+                    Container(width: 20, height: 20, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(6))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Container(height: 16, color: base)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Metrics grid placeholders
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: List.generate(4, (i) => Container(
+                        width: (MediaQuery.of(context).size.width - 20 * 2 - 12) / 2,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(width: 100, height: 12, color: base),
+                            const SizedBox(height: 8),
+                            Container(width: 60, height: 18, color: base),
+                            const SizedBox(height: 6),
+                            Container(width: 80, height: 10, color: base),
+                          ],
+                        ),
+                      )),
+                ),
+                const SizedBox(height: 20),
+                // Section blocks
+                ...List.generate(3, (index) => Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(height: 16, width: 120, color: base),
+                          const SizedBox(height: 12),
+                          Container(height: 12, width: double.infinity, color: base),
+                          const SizedBox(height: 8),
+                          Container(height: 12, width: MediaQuery.of(context).size.width * 0.7, color: base),
+                          const SizedBox(height: 8),
+                          Container(height: 12, width: MediaQuery.of(context).size.width * 0.5, color: base),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget _buildCollegeDetails(
       BuildContext context, College college, CollegeProvider provider) {
     return CustomScrollView(
@@ -181,12 +267,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                         fit: BoxFit.cover,
                         errorWidget: (context, url, error) =>
                             _buildPlaceholderBackground(context),
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
+                        placeholder: (context, url) => _buildHeroImageSkeleton(),
                       )
                     : _buildPlaceholderBackground(context),
                 // Gradient overlay for better text readability

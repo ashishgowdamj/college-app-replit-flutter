@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/api_service.dart';
 import '../models/exam.dart';
 import '../widgets/bottom_navigation.dart';
@@ -60,7 +61,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
 
   Widget _buildBody() {
     if (_isLoading && _exams.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildExamListSkeleton(context);
     }
 
     if (_error != null && _exams.isEmpty) {
@@ -110,6 +111,61 @@ class _ExamsScreenState extends State<ExamsScreen> {
         itemBuilder: (context, index) {
           final exam = _exams[index];
           return _buildExamCard(exam);
+        },
+      ),
+    );
+  }
+
+  Widget _buildExamListSkeleton(BuildContext context) {
+    final base = Colors.grey[300]!;
+    final highlight = Colors.grey[100]!;
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(height: 16, width: double.infinity, color: base),
+                          const SizedBox(height: 8),
+                          Container(height: 12, width: MediaQuery.of(context).size.width * 0.5, color: base),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: base,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(height: 12, width: 200, color: base),
+                const SizedBox(height: 8),
+                Container(height: 12, width: 240, color: base),
+              ],
+            ),
+          );
         },
       ),
     );

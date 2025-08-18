@@ -18,6 +18,7 @@ import 'screens/predictor_screen.dart';
 import 'screens/exams_screen.dart';
 import 'screens/compare_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/goal_location_selector_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -204,6 +205,10 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/compare',
       builder: (context, state) => const CompareScreen(),
+    ),
+    GoRoute(
+      path: '/select-goal',
+      builder: (context, state) => const GoalLocationSelectorScreen(),
     ),
     GoRoute(
       path: '/college/:id',

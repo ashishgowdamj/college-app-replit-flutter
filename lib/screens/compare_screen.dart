@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
-import '../widgets/compare_matrix_sticky.dart';
-import '../widgets/compare_accordion.dart';
+import '../widgets/compare_courses_fees_section.dart';
 
 class CompareScreen extends StatefulWidget {
   const CompareScreen({super.key});
@@ -17,8 +17,10 @@ class _CompareScreenState extends State<CompareScreen> {
   final List<College> selectedColleges = [];
   final Set<String> selectedCollegeIds = <String>{};
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   List<College> _filteredColleges = [];
   bool _isSearching = false;
+  int? _editIndex; // 0 for left, 1 for right when editing replacement
 
   // Track which sections are expanded
   final Map<String, bool> _expandedSections = {
@@ -39,6 +41,7 @@ class _CompareScreenState extends State<CompareScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -82,7 +85,7 @@ class _CompareScreenState extends State<CompareScreen> {
         body: Consumer<CollegeProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildCompareSkeleton(context);
             }
 
             // Initialize filtered colleges if empty
@@ -98,10 +101,18 @@ class _CompareScreenState extends State<CompareScreen> {
                 // Selection area
                 _buildSelectionArea(provider),
 
-                // Comparison area
-                if (selectedColleges.isNotEmpty)
+                // Comparison area: match screenshot style when 2 selected
+                if (selectedColleges.length >= 2)
                   Expanded(
-                    child: _buildComparisonArea(),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: CompareCoursesFeesSection(
+                        a: selectedColleges[0],
+                        b: selectedColleges[1],
+                        onEditLeft: () => _startEdit(0),
+                        onEditRight: () => _startEdit(1),
+                      ),
+                    ),
                   )
                 else
                   Expanded(
@@ -111,6 +122,63 @@ class _CompareScreenState extends State<CompareScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompareSkeleton(BuildContext context) {
+    final base = Colors.grey[300]!;
+    final highlight = Colors.grey[100]!;
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: ListView(
+        children: [
+          // Search bar placeholder
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(color: Colors.white),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          // Selection area placeholder
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 14, width: 160, color: base),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: Container(height: 40, color: base)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Container(height: 40, color: base)),
+                  ],
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Comparison card placeholder
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Container(
+              height: 240,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -231,7 +299,9 @@ class _CompareScreenState extends State<CompareScreen> {
                                 size: 20,
                               ),
                               onPressed: () {
-                                if (isSelected) {
+                                if (_editIndex != null) {
+                                  _replaceCollege(college, _editIndex!);
+                                } else if (isSelected) {
                                   _removeCollege(college);
                                 } else {
                                   _addCollege(college);
@@ -281,112 +351,6 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  Widget _buildComparisonArea() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // College Headers (like collegedunia)
-          _buildCollegeHeaders(),
-
-          const SizedBox(height: 12),
-
-          // Comparison Matrix - shown when 2 or more colleges are selected
-          if (selectedColleges.length >= 2) ...[
-            const SizedBox(height: 16),
-            CompareMatrixSticky(
-              colleges: selectedColleges,
-              compareAgainstBest:
-                  true, // set to false to compare vs first selected
-            ),
-          ],
-
-          // Courses & Fees Section
-          if (selectedColleges.length >= 2) ...[
-            const SizedBox(height: 16),
-            CompareAccordion(
-              title: 'Courses & Fees',
-              colleges: selectedColleges,
-              rows: [
-                CompareRows.fees(),
-                CompareRows.courseName(),
-                CompareRows.acceptedExams(
-                  onLinkTap: (i) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Open Admission Details for ${selectedColleges[i].name}'),
-                      ),
-                    );
-                  },
-                ),
-                CompareRows.eligibility('10+2 with 75% + JEE Advanced'),
-                CompareRows.cutoff(List.generate(selectedColleges.length, (i) {
-                  // Generate some sample cutoff data
-                  final cutoffs = ['171 (JEE-Advanced)', '125 (JEE-Advanced)', '198 (JEE-Advanced)'];
-                  return i < cutoffs.length ? cutoffs[i] : '—';
-                })),
-                CompareRows.credential('Degree'),
-                CompareRows.mode('On Campus'),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // College Info Section
-          _buildCollapsibleSection(
-            'College Info',
-            Icons.info_outline,
-            _buildCollegeInfoComparison(),
-          ),
-
-          const SizedBox(height: 12),
-
-          // College Rating & Reviews Section
-          _buildCollapsibleSection(
-            'College Rating & Reviews',
-            Icons.star,
-            _buildRatingReviewsComparison(),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Courses & Fees Section
-          _buildCollapsibleSection(
-            'Courses & Fees',
-            Icons.school,
-            _buildCoursesFeesComparison(),
-          ),
-
-          const SizedBox(height: 12),
-
-          // College Ranking Section
-          _buildCollapsibleSection(
-            'College Ranking',
-            Icons.workspace_premium,
-            _buildRankingComparison(),
-          ),
-
-          const SizedBox(height: 12),
-
-          // College Placements Section
-          _buildCollapsibleSection(
-            'College Placements',
-            Icons.work,
-            _buildPlacementsComparison(),
-          ),
-
-          const SizedBox(height: 12),
-
-          // College Facilities Section
-          _buildCollapsibleSection(
-            'College Facilities',
-            Icons.local_offer,
-            _buildFacilitiesComparison(),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase().trim();
@@ -408,6 +372,52 @@ class _CompareScreenState extends State<CompareScreen> {
     });
   }
 
+  void _startEdit(int index) {
+    final provider = context.read<CollegeProvider>();
+    setState(() {
+      _editIndex = index;
+      _isSearching = true;
+      _filteredColleges = provider.colleges;
+    });
+    _searchController.clear();
+    Future.delayed(const Duration(milliseconds: 50), () {
+      _searchFocus.requestFocus();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Select a college to replace ${index == 0 ? 'left' : 'right'} slot')),
+    );
+  }
+
+  void _replaceCollege(College college, int index) {
+    final idStr = college.id.toString();
+    // If same as current, just exit edit mode
+    if (selectedColleges[index].id.toString() == idStr) {
+      _exitEdit();
+      return;
+    }
+    // Prevent duplicates: remove if already present, then insert
+    final existingIdx = selectedColleges.indexWhere((c) => c.id.toString() == idStr);
+    setState(() {
+      if (existingIdx != -1) {
+        selectedColleges.removeAt(existingIdx);
+      }
+      selectedCollegeIds.remove(selectedColleges[index].id.toString());
+      selectedColleges[index] = college;
+      selectedCollegeIds.add(idStr);
+    });
+    _exitEdit();
+  }
+
+  void _exitEdit() {
+    setState(() {
+      _editIndex = null;
+      _isSearching = false;
+      _filteredColleges = [];
+    });
+    _searchController.clear();
+    _searchFocus.unfocus();
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -419,6 +429,7 @@ class _CompareScreenState extends State<CompareScreen> {
       ),
       child: TextField(
         controller: _searchController,
+        focusNode: _searchFocus,
         decoration: InputDecoration(
           hintText: 'Search colleges to compare...',
           prefixIcon: const Icon(Icons.search),
@@ -430,6 +441,7 @@ class _CompareScreenState extends State<CompareScreen> {
                     setState(() {
                       _isSearching = false;
                       _filteredColleges = [];
+                      _editIndex = null;
                     });
                   },
                 )

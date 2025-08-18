@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/college_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as gc;
+import 'dart:async';
+import '../services/location_service.dart';
+import '../models/location_suggestion.dart';
 
 class SearchBarWidget extends StatefulWidget {
   const SearchBarWidget({super.key});
@@ -60,16 +65,30 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                   ),
                   onPressed: () {
                     _controller.clear();
+                    // Centralized debounce in provider will handle fetch
                     context.read<CollegeProvider>().updateSearchQuery('');
-                    context.read<CollegeProvider>().fetchColleges();
                   },
                 )
-              : IconButton(
-                  icon: Icon(
-                    Icons.tune_rounded,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: () => _showFilterDialog(context),
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Choose location',
+                      icon: Icon(
+                        Icons.location_on_outlined,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () => _showFilterDialog(context),
+                    ),
+                    IconButton(
+                      tooltip: 'Filters',
+                      icon: Icon(
+                        Icons.tune_rounded,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () => _showFilterDialog(context),
+                    ),
+                  ],
                 ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -91,16 +110,12 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
         onChanged: (value) {
+          // Provider contains a debounce and triggers fetch; keep UI simple
           context.read<CollegeProvider>().updateSearchQuery(value);
-          // Trigger search after a short delay to avoid too many requests
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && _controller.text == value) {
-              context.read<CollegeProvider>().fetchColleges(refresh: true);
-            }
-          });
         },
         onSubmitted: (value) {
-          context.read<CollegeProvider>().fetchColleges(refresh: true);
+          // Optional: rely on provider debounce; no extra fetch to keep behavior consistent
+          context.read<CollegeProvider>().updateSearchQuery(value);
         },
       ),
     );
@@ -147,6 +162,11 @@ class _FilterModalState extends State<FilterModal> {
   String? selectedState;
   String? selectedCourseType;
   RangeValues? feesRange;
+  String? locationQuery;
+  final TextEditingController _locationController = TextEditingController();
+  final List<LocationSuggestion> _suggestions = [];
+  Timer? _debounce;
+  bool _isFetching = false;
 
   final List<String> states = [
     'Andhra Pradesh', 'Bihar', 'Delhi', 'Gujarat', 'Haryana', 'Karnataka',
@@ -164,6 +184,10 @@ class _FilterModalState extends State<FilterModal> {
     super.initState();
     selectedState = widget.provider.selectedState;
     selectedCourseType = widget.provider.selectedCourseType;
+    locationQuery = widget.provider.locationQuery;
+    if (locationQuery != null) {
+      _locationController.text = locationQuery!;
+    }
     
     final minFees = widget.provider.minFees;
     final maxFees = widget.provider.maxFees;
@@ -215,6 +239,99 @@ class _FilterModalState extends State<FilterModal> {
             child: ListView(
               controller: widget.scrollController,
               children: [
+                // Location filter
+                Text(
+                  'Location',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _locationController,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              hintText: 'Enter city, state or area',
+                              suffixIcon: _isFetching
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(12.0),
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            onChanged: (v) {
+                              setState(() {
+                                locationQuery = v;
+                              });
+                              _debouncedFetch(v);
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          if (_suggestions.isNotEmpty)
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 240),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: _suggestions.length,
+                                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[300]),
+                                itemBuilder: (context, index) {
+                                  final s = _suggestions[index];
+                                  return ListTile(
+                                    dense: true,
+                                    leading: const Icon(Icons.place_outlined),
+                                    title: Text(
+                                      s.displayName,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: (s.city != null || s.state != null)
+                                        ? Text([(s.city ?? ''), (s.state ?? '')]
+                                            .where((e) => e.isNotEmpty)
+                                            .join(', '))
+                                        : null,
+                                    onTap: () {
+                                      setState(() {
+                                        locationQuery = s.displayName;
+                                        _locationController.text = s.displayName;
+                                        // Also set state if available from suggestion
+                                        if (s.state != null && s.state!.trim().isNotEmpty) {
+                                          selectedState = s.state;
+                                        }
+                                        _suggestions.clear();
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _useMyLocation,
+                      icon: const Icon(Icons.my_location, size: 18),
+                      label: const Text('Use my location'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 // State filter
                 Text(
                   'State',
@@ -308,6 +425,9 @@ class _FilterModalState extends State<FilterModal> {
                   courseType: selectedCourseType,
                   minFees: feesRange!.start.round(),
                   maxFees: feesRange!.end.round(),
+                  locationQuery: (locationQuery ?? _locationController.text).trim().isEmpty
+                      ? null
+                      : (locationQuery ?? _locationController.text).trim(),
                 );
                 widget.provider.fetchColleges(refresh: true);
                 Navigator.pop(context);
@@ -324,5 +444,96 @@ class _FilterModalState extends State<FilterModal> {
         ],
       ),
     );
+  }
+
+  Future<void> _useMyLocation() async {
+    try {
+      // Check service
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled.')),
+          );
+        }
+        return;
+      }
+
+      // Check permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied.')),
+            );
+          }
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission permanently denied. Enable in Settings.')),
+          );
+        }
+        return;
+      }
+
+      // Get position
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      // Reverse geocode
+      final places = await gc.placemarkFromCoordinates(pos.latitude, pos.longitude);
+      if (places.isNotEmpty) {
+        final p = places.first;
+        final city = p.locality?.trim();
+        final state = p.administrativeArea?.trim();
+        final loc = [city, state].where((e) => (e ?? '').isNotEmpty).join(', ');
+        setState(() {
+          locationQuery = loc;
+          _locationController.text = loc;
+          if ((state ?? '').isNotEmpty) {
+            selectedState = state;
+          }
+        });
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Using location: $loc')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get location: $e')),
+        );
+      }
+    }
+  }
+
+  void _debouncedFetch(String q) {
+    _debounce?.cancel();
+    if (q.trim().isEmpty) {
+      setState(() => _suggestions.clear());
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _isFetching = true);
+      try {
+        final results = await LocationService.searchPlaces(q, countryCodes: 'in', limit: 8);
+        if (!mounted) return;
+        setState(() {
+          _suggestions
+            ..clear()
+            ..addAll(results);
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _suggestions.clear());
+      } finally {
+        if (mounted) setState(() => _isFetching = false);
+      }
+    });
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/profile_provider.dart';
 import '../models/user_profile.dart';
 
@@ -140,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             )
-          : const Center(child: CircularProgressIndicator()),
+          : _buildProfileSkeleton(context),
     );
   }
 
@@ -154,6 +155,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSkeleton(BuildContext context) {
+    final base = Colors.grey[300]!;
+    final highlight = Colors.grey[100]!;
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Avatar + name field row
+          Row(
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(height: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Section cards
+          ...List.generate(2, (i) => Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 16, width: 140, color: base),
+                    const SizedBox(height: 10),
+                    ...List.generate(3, (j) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Container(height: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                        )),
+                  ],
+                ),
+              )),
+          // Save button skeleton
+          Container(height: 48, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+          const SizedBox(height: 8),
+          Container(height: 36, width: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+        ],
       ),
     );
   }

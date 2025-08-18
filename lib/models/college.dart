@@ -102,9 +102,80 @@ class College {
     this.createdAt,
   });
 
-  factory College.fromJson(Map<String, dynamic> json) =>
-      _$CollegeFromJson(json);
+  factory College.fromJson(Map<String, dynamic> json) {
+    // First, create the college from the generated code
+    final college = _$CollegeFromJson(json);
+    
+    // Then manually handle the exams field if it exists
+    if (json['exams'] is List) {
+      final exams = List<String>.from(json['exams'] as List);
+      return college.copyWith(exams: exams);
+    }
+    
+    return college;
+  }
+  
   Map<String, dynamic> toJson() => _$CollegeToJson(this);
+  
+  College copyWith({
+    int? id,
+    String? name,
+    String? shortName,
+    String? location,
+    String? state,
+    String? city,
+    int? establishedYear,
+    String? type,
+    String? affiliation,
+    String? imageUrl,
+    String? description,
+    String? website,
+    int? overallRank,
+    int? nirfRank,
+    String? fees,
+    String? feesPeriod,
+    String? rating,
+    int? reviewCount,
+    String? admissionProcess,
+    int? cutoffScore,
+    String? placementRate,
+    String? averagePackage,
+    String? highestPackage,
+    String? hostelFees,
+    bool? hasHostel,
+    List<String>? exams,
+    String? createdAt,
+  }) {
+    return College(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      shortName: shortName ?? this.shortName,
+      location: location ?? this.location,
+      state: state ?? this.state,
+      city: city ?? this.city,
+      establishedYear: establishedYear ?? this.establishedYear,
+      type: type ?? this.type,
+      affiliation: affiliation ?? this.affiliation,
+      imageUrl: imageUrl ?? this.imageUrl,
+      description: description ?? this.description,
+      website: website ?? this.website,
+      overallRank: overallRank ?? this.overallRank,
+      nirfRank: nirfRank ?? this.nirfRank,
+      fees: fees ?? this.fees,
+      feesPeriod: feesPeriod ?? this.feesPeriod,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      admissionProcess: admissionProcess ?? this.admissionProcess,
+      cutoffScore: cutoffScore ?? this.cutoffScore,
+      placementRate: placementRate ?? this.placementRate,
+      averagePackage: averagePackage ?? this.averagePackage,
+      highestPackage: highestPackage ?? this.highestPackage,
+      hostelFees: hostelFees ?? this.hostelFees,
+      hasHostel: hasHostel ?? this.hasHostel,
+      exams: exams ?? this.exams,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 
   double get ratingAsDouble => double.tryParse(rating ?? '0') ?? 0.0;
   double get feesAsDouble => double.tryParse(fees ?? '0') ?? 0.0;

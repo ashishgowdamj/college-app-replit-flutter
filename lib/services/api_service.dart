@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/college.dart';
 import '../models/exam.dart';
 import '../models/review.dart';
@@ -8,14 +7,14 @@ class ApiService {
   // Use local backend for testing
   static const String baseUrl =
       'http://10.0.2.2:3000/api'; // Android emulator localhost
-  // Fallback to mock data if server is not available
-  static const bool useMockData =
-      true; // Set to true temporarily to test with mock data
+  // Use real API by default
+  static const bool useMockData = false; // Set to false to use real API
 
   final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    // Faster fallback to mock data when local backend is unreachable
+    connectTimeout: const Duration(seconds: 4),
+    receiveTimeout: const Duration(seconds: 6),
   ));
 
   // College APIs
@@ -38,8 +37,9 @@ class ApiService {
       // Build query parameters
       Map<String, dynamic> queryParams = {};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (location != null && location.isNotEmpty)
+      if (location != null && location.isNotEmpty) {
         queryParams['location'] = location;
+      }
       if (state != null && state.isNotEmpty) queryParams['state'] = state;
       if (courseType != null && courseType.isNotEmpty) {
         // Map courseType to the appropriate backend filter
@@ -53,15 +53,19 @@ class ApiService {
           queryParams['courseType'] = courseType;
         }
       }
-      if (minFees != null && minFees > 0)
+      if (minFees != null && minFees > 0) {
         queryParams['minFees'] = minFees.toString();
-      if (maxFees != null && maxFees > 0)
+      }
+      if (maxFees != null && maxFees > 0) {
         queryParams['maxFees'] = maxFees.toString();
-      if (entranceExam != null && entranceExam.isNotEmpty)
+      }
+      if (entranceExam != null && entranceExam.isNotEmpty) {
         queryParams['entranceExam'] = entranceExam;
+      }
       if (limit != null && limit > 0) queryParams['limit'] = limit.toString();
-      if (offset != null && offset > 0)
+      if (offset != null && offset > 0) {
         queryParams['offset'] = offset.toString();
+      }
 
       print('Making API call to: $baseUrl/colleges with params: $queryParams');
       final response =
