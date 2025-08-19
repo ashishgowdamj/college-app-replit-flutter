@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer/shimmer.dart';
 
 import '../services/college_provider.dart';
 import '../services/profile_provider.dart';
@@ -323,63 +322,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Shimmer skeleton placeholder for a college tile
-  Widget _buildSkeletonTile(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Text lines
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(height: 16, width: double.infinity, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Container(height: 14, width: MediaQuery.of(context).size.width * 0.5, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(child: Container(height: 12, color: Colors.white)),
-                      const SizedBox(width: 8),
-                      Container(width: 60, height: 24, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Safe read: returns null if ProfileProvider isn't registered
   ProfileProvider? _tryReadProfileProvider(BuildContext context) {
     try {
@@ -403,7 +345,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return DrawerHeader(
       decoration: BoxDecoration(
-        color: cs.primary,
+        gradient: LinearGradient(
+          colors: [cs.primary, cs.primaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -420,9 +366,13 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 56,
                 height: 56,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  gradient: LinearGradient(
+                    colors: [cs.onPrimary, Colors.white],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -485,15 +435,12 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error details: ${provider.error}');
     }
 
-    // Show skeletons on initial load
+    // Show loading indicator on initial load
     if (provider.isLoading && provider.colleges.isEmpty) {
-      print('Showing skeleton placeholders (initial load)');
-      return Scaffold(
-        body: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          itemCount: 6,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _buildSkeletonTile(context),
+      print('Showing loading indicator (initial load)');
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
       );
     }
@@ -622,18 +569,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         return;
                       }
 
-                      // Map chip to either course type or location query
+                      // Map chip to either state or type
                       String? state;
                       String? courseType;
-                      String? locationQuery;
 
                       const knownTypes = {'IIT', 'NIT', 'IIIT', 'Private'};
                       if (knownTypes.contains(query)) {
                         courseType = query;
                       } else {
-                        // Treat anything else as a free-text location (city/area)
-                        locationQuery = query;
-                        state = null; // do not over-constrain by state here
+                        // Treat anything else as a state (e.g., 'Delhi', 'Karnataka')
+                        state = query;
                       }
 
                       provider.updateFilters(
@@ -641,7 +586,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         courseType: courseType,
                         minFees: null,
                         maxFees: null,
-                        locationQuery: locationQuery,
                       );
                       provider.fetchColleges(refresh: true);
                     },
@@ -668,15 +612,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-          // Loading (first load) — show skeletons
+          // Loading (first load)
           if (provider.isLoading && colleges.isEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              sliver: SliverList.separated(
-                itemCount: 6,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, _) => _buildSkeletonTile(context),
-              ),
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
             )
           // Error (first load)
           else if (provider.error != null && colleges.isEmpty)
@@ -711,15 +651,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   if (index >= colleges.length) {
-                    // pagination skeletons
-                    return Column(
-                      children: [
-                        _buildSkeletonTile(context),
-                        const SizedBox(height: 12),
-                        _buildSkeletonTile(context),
-                        const SizedBox(height: 12),
-                        _buildSkeletonTile(context),
-                      ],
+                    // pagination loader
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
                     );
                   }
                   final college = colleges[index];

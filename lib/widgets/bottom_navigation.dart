@@ -11,32 +11,30 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final idx = _getCurrentIndex();
-    return SafeArea(
-      top: false,
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: idx,
-        onTap: (i) => _onItemTapped(context, i),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.swap_horiz_rounded),
-            label: 'Exams',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_graph),
-            label: 'Predictor',
-          ),
-        ],
-      ),
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      currentIndex: _getCurrentIndex(),
+      onTap: (index) => _onItemTapped(context, index),
+      selectedItemColor: Theme.of(context).primaryColor,
+      unselectedItemColor: Colors.grey[600],
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search),
+          label: 'Search',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.quiz),
+          label: 'Exams',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.psychology),
+          label: 'Predictor',
+        ),
+      ],
     );
   }
 

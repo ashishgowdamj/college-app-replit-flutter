@@ -45,10 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Location permissions for using device location in filters -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app uses your location to suggest nearby colleges and filter results by your city/state.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app uses your location to suggest nearby colleges and filter results by your city/state.</string>
 </dict>
 </plist>
