@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer/shimmer.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
 import '../widgets/compare_courses_fees_section.dart';
@@ -85,7 +84,7 @@ class _CompareScreenState extends State<CompareScreen> {
         body: Consumer<CollegeProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {
-              return _buildCompareSkeleton(context);
+              return const Center(child: CircularProgressIndicator());
             }
 
             // Initialize filtered colleges if empty
@@ -122,63 +121,6 @@ class _CompareScreenState extends State<CompareScreen> {
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildCompareSkeleton(BuildContext context) {
-    final base = Colors.grey[300]!;
-    final highlight = Colors.grey[100]!;
-    return Shimmer.fromColors(
-      baseColor: base,
-      highlightColor: highlight,
-      child: ListView(
-        children: [
-          // Search bar placeholder
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(color: Colors.white),
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          // Selection area placeholder
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(height: 14, width: 160, color: base),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: Container(height: 40, color: base)),
-                    const SizedBox(width: 8),
-                    Expanded(child: Container(height: 40, color: base)),
-                  ],
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Comparison card placeholder
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Container(
-              height: 240,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -12,51 +12,6 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// Helper: map incoming snake_case data to app's expected camelCase schema
-function mapToAppSchema(src) {
-  const mapped = {
-    name: src.name,
-    shortName: src.short_name,
-    location: src.location,
-    state: src.state,
-    city: src.city,
-    establishedYear: src.established_year,
-    type: src.type,
-    affiliation: src.affiliation,
-    imageUrl: src.image_url,
-    description: src.description,
-    website: src.website,
-    overallRank: src.overall_rank,
-    nirfRank: src.nirf_rank,
-    // Keep fees as string for compatibility with current Flutter filters
-    fees: src.fees,
-    feesPeriod: src.fees_period,
-    rating: src.rating,
-    reviewCount: src.review_count,
-    admissionProcess: src.admission_process,
-    cutoffScore: src.cutoff_score,
-    placementRate: src.placement_rate,
-    averagePackage: src.average_package,
-    highestPackage: src.highest_package,
-    hostelFees: src.hostel_fees,
-    hasHostel: src.has_hostel,
-    createdAt: src.created_at,
-    // Optional passthroughs if present in data
-    contact: src.contact,
-    courses_offered: src.courses_offered,
-    placements: src.placements,
-    facilities: src.facilities,
-    images: src.images,
-    brochures: src.brochures,
-    tags: src.tags,
-    category: src.category,
-  };
-
-  // Remove undefined fields to keep Firestore clean
-  Object.keys(mapped).forEach((k) => mapped[k] === undefined && delete mapped[k]);
-  return mapped;
-}
-
 // College data from the JSON file you provided
 const collegesData = [
   {
@@ -455,14 +410,12 @@ async function importColleges() {
       }
       
       try {
-        // Map to app schema and add the college to Firestore
-        const payload = mapToAppSchema({
+        // Add the college to Firestore
+        await db.collection('colleges').add({
           ...collegeData,
-          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          created_at: admin.firestore.FieldValue.serverTimestamp()
         });
-
-        const docRef = await db.collection('colleges').add(payload);
-
+        
         console.log(`✓ Imported: ${collegeData.name} with ID: ${docRef.id}`);
         importedCount++;
         
