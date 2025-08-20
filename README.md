@@ -106,5 +106,4 @@ MIT. See `LICENSE`.
 
 ## Acknowledgments
 
-- Inspired by CollegeDunia and Shiksha
 - Built with Flutter (Material 3), Provider, go_router
