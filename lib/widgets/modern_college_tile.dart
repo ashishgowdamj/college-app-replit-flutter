@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../models/college.dart';
+import '../ui/design_system.dart';
 
 class ModernCollegeTile extends StatelessWidget {
   final College college;
@@ -28,12 +29,17 @@ class ModernCollegeTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cs.outlineVariant),
+          border: Border.all(color: AppTokens.outline),
           boxShadow: [
             BoxShadow(
-              color: cs.shadow.withOpacity(0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 12,
               offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: AppTokens.primary.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

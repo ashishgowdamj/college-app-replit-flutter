@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
+import '../ui/widgets/shimmer_box.dart';
+import '../ui/design_system.dart';
 
 class CollegeDetailScreen extends StatefulWidget {
   final String collegeId;
@@ -29,6 +31,18 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Optimistically set selected college from route extra if provided
+      final state = GoRouterState.of(context);
+      final extra = state.extra;
+      if (extra is College) {
+        context.read<CollegeProvider>().setSelectedCollege(extra);
+        // Precache hero image to improve perceived performance on detail header
+        final url = extra.imageUrl;
+        if (url != null && url.isNotEmpty) {
+          precacheImage(CachedNetworkImageProvider(url), context);
+        }
+      }
+      // Always fetch details (will refresh fields or load if not cached)
       final collegeId = int.tryParse(widget.collegeId);
       if (collegeId != null) {
         context.read<CollegeProvider>().fetchCollegeDetails(collegeId);
@@ -47,7 +61,8 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
     return Scaffold(
       body: Consumer<CollegeProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
+          // If we don't yet have any data, show skeleton or error
+          if (provider.selectedCollege == null) {
             return Scaffold(
               appBar: AppBar(
                 leading: IconButton(
@@ -60,21 +75,32 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                     }
                   },
                 ),
+                title: const Text('College details'),
               ),
-              body: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading college details...'),
-                  ],
-                ),
-              ),
+              body: provider.error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, size: 40, color: Colors.redAccent),
+                            const SizedBox(height: 12),
+                            Text(provider.error!, textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => context.pop(),
+                              child: const Text('Go back'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const _CollegeDetailLinearSkeleton(),
             );
           }
-
-          if (provider.error != null && provider.selectedCollege == null) {
+          // If we have selectedCollege, render details immediately even if loading
+          if (provider.error != null) {
             return Scaffold(
               appBar: AppBar(
                 leading: IconButton(
@@ -181,12 +207,7 @@ class _CollegeDetailScreenState extends State<CollegeDetailScreen>
                         fit: BoxFit.cover,
                         errorWidget: (context, url, error) =>
                             _buildPlaceholderBackground(context),
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
+                        placeholder: (context, url) => Container(color: Colors.grey[300]),
                       )
                     : _buildPlaceholderBackground(context),
                 // Gradient overlay for better text readability
@@ -1175,5 +1196,115 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
     return false;
+  }
+}
+
+
+class _CollegeDetailLinearSkeleton extends StatelessWidget {
+  const _CollegeDetailLinearSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: const [
+        // Header image placeholder
+        _SkeletonBox(height: 180, radius: BorderRadius.all(Radius.circular(12))),
+        SizedBox(height: 16),
+        // Title and location
+        _SkeletonBox(height: 22, width: 220, radius: BorderRadius.all(Radius.circular(6))),
+        SizedBox(height: 8),
+        _SkeletonBox(height: 14, width: 160, radius: BorderRadius.all(Radius.circular(4))),
+        SizedBox(height: 16),
+        // Metrics grid-like rows
+        _LinearMetricsSkeleton(),
+        SizedBox(height: 16),
+        // Section cards
+        _SectionCardSkeleton(),
+        SizedBox(height: 12),
+        _SectionCardSkeleton(),
+        SizedBox(height: 12),
+        _SectionCardSkeleton(),
+      ],
+    );
+  }
+}
+
+class _LinearMetricsSkeleton extends StatelessWidget {
+  const _LinearMetricsSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        Expanded(child: _MetricSkeletonCard()),
+        SizedBox(width: 12),
+        Expanded(child: _MetricSkeletonCard()),
+      ],
+    );
+  }
+}
+
+class _MetricSkeletonCard extends StatelessWidget {
+  const _MetricSkeletonCard();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          _SkeletonBox(height: 12, width: 80, radius: BorderRadius.all(Radius.circular(4))),
+          SizedBox(height: 6),
+          _SkeletonBox(height: 18, width: 100, radius: BorderRadius.all(Radius.circular(6))),
+          SizedBox(height: 4),
+          _SkeletonBox(height: 10, width: 70, radius: BorderRadius.all(Radius.circular(4))),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCardSkeleton extends StatelessWidget {
+  const _SectionCardSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTokens.outline),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+          BoxShadow(color: AppTokens.primary.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          ShimmerBox(height: 18, width: 140, borderRadius: BorderRadius.all(Radius.circular(4))),
+          SizedBox(height: 12),
+          ShimmerBox(height: 12, borderRadius: BorderRadius.all(Radius.circular(4))),
+          SizedBox(height: 8),
+          ShimmerBox(height: 12, width: 200, borderRadius: BorderRadius.all(Radius.circular(4))),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  final double height;
+  final double? width;
+  final BorderRadius radius;
+  const _SkeletonBox({required this.height, this.width, this.radius = const BorderRadius.all(Radius.circular(12))});
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerBox(height: height, width: width, borderRadius: radius);
   }
 }

@@ -55,7 +55,7 @@ class CollegeProvider with ChangeNotifier {
       print('Search query unchanged, skipping update');
       return;
     }
-    
+
     print('Updating search query from "$_searchQuery" to "$query"');
     _searchQuery = query;
     
@@ -357,29 +357,60 @@ class CollegeProvider with ChangeNotifier {
 
   // Fetch college details
   Future<void> fetchCollegeDetails(int collegeId) async {
+    print('=== fetchCollegeDetails($collegeId) called ===');
     _setLoading(true);
+    _error = null;
     try {
-      // First try to find the college in the already loaded list
-      final existingCollege = _colleges.where((college) => college.id == collegeId).firstOrNull;
-      
+      // Try to find the college in the already loaded list first (instant show)
+      final existingCollege =
+          _colleges.where((college) => college.id == collegeId).firstOrNull;
+
       if (existingCollege != null) {
+        print('College found in cache: ${existingCollege.name}');
         _selectedCollege = existingCollege;
       } else {
-        // If not found in loaded list, use mock data for faster loading
-        _selectedCollege = null;
+        print('College not in cache. Fetching from API...');
+        final fetched = await _apiService.getCollege(collegeId);
+        if (fetched != null) {
+          print('Fetched college from API: ${fetched.name}');
+          _selectedCollege = fetched;
+        } else {
+          print('College not found from API');
+          _selectedCollege = null;
+          _selectedCollegeReviews = [];
+          _error = 'College not found';
+          return;
+        }
       }
-      
+
+      // If we have a selected college (from cache or API), fetch reviews
       if (_selectedCollege != null) {
-        _selectedCollegeReviews = await _apiService.getCollegeReviews(collegeId);
+        try {
+          _selectedCollegeReviews = await _apiService.getCollegeReviews(collegeId);
+          print('Loaded ${_selectedCollegeReviews.length} reviews');
+        } catch (e) {
+          print('Failed to load reviews: $e');
+          _selectedCollegeReviews = [];
+        }
       }
+
       _error = null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Error in fetchCollegeDetails: $e');
+      print('Stack trace: $stackTrace');
       _error = e.toString();
       _selectedCollege = null;
       _selectedCollegeReviews = [];
     } finally {
       _setLoading(false);
+      print('=== fetchCollegeDetails completed (college: ${_selectedCollege?.name ?? 'null'}) ===');
     }
+  }
+
+  // Optimistically set the selected college (used when navigating from lists)
+  void setSelectedCollege(College college) {
+    _selectedCollege = college;
+    notifyListeners();
   }
 
   // Toggle favorite college

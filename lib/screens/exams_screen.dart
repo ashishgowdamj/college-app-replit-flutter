@@ -4,7 +4,63 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../models/exam.dart';
 import '../widgets/bottom_navigation.dart';
+import '../ui/widgets/shimmer_box.dart';
+import '../ui/design_system.dart';
 
+/// Shimmer skeleton list for exams loading state
+class _ExamSkeletonList extends StatelessWidget {
+  const _ExamSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTokens.outline, width: 1),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+              BoxShadow(color: AppTokens.primary.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              ShimmerBox(height: 18, width: 180, borderRadius: BorderRadius.all(Radius.circular(4))),
+              SizedBox(height: 8),
+              ShimmerBox(height: 12, width: 240, borderRadius: BorderRadius.all(Radius.circular(4))),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.business, size: 16, color: Colors.transparent),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: ShimmerBox(height: 12, borderRadius: BorderRadius.all(Radius.circular(4))),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: Colors.transparent),
+                  SizedBox(width: 8),
+                  ShimmerBox(height: 12, width: 160, borderRadius: BorderRadius.all(Radius.circular(4))),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 class ExamsScreen extends StatefulWidget {
   const ExamsScreen({super.key});
 
@@ -60,7 +116,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
 
   Widget _buildBody() {
     if (_isLoading && _exams.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _ExamSkeletonList();
     }
 
     if (_error != null && _exams.isEmpty) {

@@ -9,6 +9,10 @@ import '../widgets/quick_filters_bar.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/course_customization_drawer.dart';
 import '../data/goal_catalog.dart';
+import '../ui/widgets/section_header.dart';
+import '../ui/widgets/pill_chip.dart';
+import '../ui/widgets/shimmer_box.dart';
+import '../ui/design_system.dart';
 
 /// Sticky header delegate used for Search bar and Filters bar
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -111,18 +115,37 @@ class _GoalHeroSection extends StatelessWidget {
 
           // Specializations chips
           if (hasGoal && specializations.isNotEmpty) ...[
-            const Text('Top Specializations', style: TextStyle(fontWeight: FontWeight.w800)),
+            const SectionHeader(title: 'Top Specializations'),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final spec in specializations.take(10))
-                  ActionChip(
-                    label: Text(spec),
-                    onPressed: () {
-                      context.read<CollegeProvider>().updateSearchQuery('$goal $spec');
-                      context.go('/search');
+                  PillChip(
+                    label: spec,
+                    onTap: () {
+                      final cp = context.read<CollegeProvider>();
+                      // Map goal to a courseType when applicable to improve match rate
+                      String? courseType;
+                      final g = goal.toLowerCase();
+                      if (g.contains('engineering')) courseType = 'engineering';
+                      else if (g.contains('medical')) courseType = 'medical';
+                      else if (g.contains('management')) courseType = 'management';
+
+                      cp.updateFilters(
+                        state: null,
+                        courseType: courseType,
+                        minFees: null,
+                        maxFees: null,
+                      );
+
+                      // Use specialization as the search term for better keyword hits
+                      // Trigger an immediate refresh so Search has results on arrival
+                      cp.updateSearchQuery(spec);
+                      cp.fetchColleges(refresh: true).then((_) {
+                        context.go('/search');
+                      });
                     },
                   ),
               ],
@@ -133,7 +156,7 @@ class _GoalHeroSection extends StatelessWidget {
 
           // Top places row
           if (hasGoal && places.isNotEmpty) ...[
-            const Text('Top Locations', style: TextStyle(fontWeight: FontWeight.w800)),
+            const SectionHeader(title: 'Top Locations'),
             const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -142,10 +165,9 @@ class _GoalHeroSection extends StatelessWidget {
                   for (final p in places)
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(p),
-                        selected: false,
-                        onSelected: (_) async {
+                      child: PillChip(
+                        label: p,
+                        onTap: () async {
                           final cp = context.read<CollegeProvider>();
                           cp.updateFilters(state: p, courseType: null, minFees: null, maxFees: null);
                           await cp.fetchColleges(refresh: true);
@@ -165,6 +187,105 @@ class _GoalHeroSection extends StatelessWidget {
   }
 }
 
+/// Simple gray box used in skeletons (no gradients)
+class _SkeletonBox extends StatelessWidget {
+  final double height;
+  final double? width;
+  final BorderRadiusGeometry radius;
+  const _SkeletonBox({required this.height, this.width, this.radius = const BorderRadius.all(Radius.circular(8))});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerBox(height: height, width: width, borderRadius: radius as BorderRadius);
+  }
+}
+
+/// Full-page skeleton used during initial load
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          elevation: 0,
+          backgroundColor: cs.primary,
+          foregroundColor: cs.onPrimary,
+          title: const _SkeletonBox(height: 18, width: 140, radius: BorderRadius.all(Radius.circular(4))),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _SkeletonBox(height: 44, radius: BorderRadius.all(Radius.circular(12))),
+                SizedBox(height: 12),
+                _SkeletonBox(height: 16, width: 120, radius: BorderRadius.all(Radius.circular(4))),
+                SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+        const _SkeletonSliverList(),
+      ],
+    );
+  }
+}
+
+/// Skeleton list of tiles (used as sliver)
+class _SkeletonSliverList extends StatelessWidget {
+  const _SkeletonSliverList();
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      sliver: SliverList.separated(
+        itemCount: 6,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final cs = Theme.of(context).colorScheme;
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTokens.outline, width: 1),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+                BoxShadow(color: AppTokens.primary.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _SkeletonBox(height: 56, width: 56, radius: BorderRadius.all(Radius.circular(10))),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SkeletonBox(height: 16, width: 180, radius: BorderRadius.all(Radius.circular(4))),
+                      SizedBox(height: 8),
+                      _SkeletonBox(height: 12, width: 220, radius: BorderRadius.all(Radius.circular(4))),
+                      SizedBox(height: 6),
+                      _SkeletonBox(height: 12, width: 140, radius: BorderRadius.all(Radius.circular(4))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 /// Search field with live clear “x”
 class _SearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -173,15 +294,22 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // solid for readability
+        color: cs.surface,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTokens.outline, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AppTokens.primary.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -198,10 +326,10 @@ class _SearchField extends StatelessWidget {
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
               suffixIcon: hasText
                   ? IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
+                      icon: Icon(Icons.close, color: cs.onSurfaceVariant),
                       onPressed: () {
                         // Clear the search field and trigger search with empty query
                         controller.clear();
@@ -435,14 +563,10 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error details: ${provider.error}');
     }
 
-    // Show loading indicator on initial load
+    // Show skeleton on initial load
     if (provider.isLoading && provider.colleges.isEmpty) {
-      print('Showing loading indicator (initial load)');
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      print('Showing skeleton (initial load)');
+      return const Scaffold(body: _HomeSkeleton());
     }
 
     // Show error message if there's an error
@@ -476,9 +600,7 @@ class _HomeScreenState extends State<HomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadInitialData();
       });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: _HomeSkeleton());
     }
 
     return Scaffold(
@@ -612,12 +734,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-          // Loading (first load)
+          // Loading (first load) fallback inside slivers
           if (provider.isLoading && colleges.isEmpty)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const _SkeletonSliverList()
           // Error (first load)
           else if (provider.error != null && colleges.isEmpty)
             SliverFillRemaining(

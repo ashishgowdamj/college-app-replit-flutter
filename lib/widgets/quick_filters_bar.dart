@@ -15,14 +15,16 @@ class _QuickFiltersBarState extends State<QuickFiltersBar> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final chips = <String>[
       'All', 'IIT', 'NIT', 'IIIT', 'Private', 'Delhi', 'Karnataka', 'Maharashtra'
     ];
 
-    return SizedBox(
+    return Container(
       height: 56,
+      color: cs.surface,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) => ChoiceChip(
           label: Text(chips[i]),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+import 'ui/design_system.dart';
 
 // Providers
 import 'services/college_provider.dart';
@@ -19,6 +20,7 @@ import 'screens/exams_screen.dart';
 import 'screens/compare_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/goal_location_selector_screen.dart';
+import 'models/college.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,77 +44,131 @@ class MyApp extends StatelessWidget {
       child: MaterialApp.router(
         title: 'College Campus',
         theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          primaryColor: const Color(0xFF4F46E5),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF4F46E5),
+          colorScheme: const ColorScheme(
             brightness: Brightness.light,
-            primary: const Color(0xFF4F46E5),
-            secondary: const Color(0xFF10B981),
-            surface: const Color(0xFFF8FAFC),
-            background: const Color(0xFFF1F5F9),
+            primary: AppTokens.primary,
+            onPrimary: Colors.white,
+            secondary: AppTokens.secondary,
+            onSecondary: Colors.black,
+            error: AppTokens.error,
+            onError: Colors.white,
+            surface: AppTokens.surface,
+            onSurface: AppTokens.textPrimary,
+            tertiary: AppTokens.tertiary,
+            background: AppTokens.bg,
+            onBackground: AppTokens.textPrimary,
           ),
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          scaffoldBackgroundColor: AppTokens.bg,
           useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF4F46E5),
+          fontFamily: 'Inter',
+          appBarTheme: AppBarTheme(
+            backgroundColor: AppTokens.primary,
             foregroundColor: Colors.white,
-            elevation: 0,
+            elevation: 2,
             centerTitle: true,
-            titleTextStyle: TextStyle(
+            titleTextStyle: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Colors.white,
+              letterSpacing: -0.3,
             ),
+            iconTheme: const IconThemeData(color: Colors.white),
+            actionsIconTheme: const IconThemeData(color: Colors.white),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
+            shadowColor: AppTokens.primary.withOpacity(0.4),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+              backgroundColor: AppTokens.primary,
               foregroundColor: Colors.white,
-              elevation: 2,
-              shadowColor: const Color(0xFF4F46E5).withOpacity(0.3),
+              elevation: 3,
+              shadowColor: AppTokens.primary.withOpacity(0.4),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               textStyle: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
               ),
             ),
           ),
           cardTheme: CardThemeData(
             elevation: 3,
             shadowColor: Colors.black.withOpacity(0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            surfaceTintColor: Colors.white,
+            color: AppTokens.surface,
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppTokens.outline, width: 1),
+            ),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppTokens.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: const BorderSide(color: AppTokens.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: const BorderSide(color: AppTokens.outline),
             ),
-            focusedBorder: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-              borderSide: BorderSide(color: Color(0xFF4F46E5), width: 2),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTokens.primary, width: 2),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTokens.error, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTokens.error, width: 2),
+            ),
+            hintStyle: const TextStyle(color: AppTokens.textSecondary, fontSize: 15),
+            labelStyle: const TextStyle(color: AppTokens.textSecondary, fontSize: 15),
+            floatingLabelStyle: const TextStyle(color: AppTokens.primary, fontWeight: FontWeight.w600),
+            prefixIconColor: AppTokens.textSecondary,
+            suffixIconColor: AppTokens.textSecondary,
           ),
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF4F46E5),
-            unselectedItemColor: Colors.grey.shade600,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            elevation: 8,
+            backgroundColor: AppTokens.surface,
+            selectedItemColor: AppTokens.primary,
+            unselectedItemColor: AppTokens.textSecondary,
+            selectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            type: BottomNavigationBarType.fixed,
+            elevation: 12,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+          ),
+          textTheme: const TextTheme(
+            displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -1.0),
+            displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+            displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            headlineLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            titleLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            titleSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+            bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+            bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
           ),
         ),
         routerConfig: _router,
@@ -188,39 +244,112 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/search',
-      builder: (context, state) => const SearchScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const SearchScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
     GoRoute(
       path: '/favorites',
-      builder: (context, state) => const FavoritesScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const FavoritesScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
     GoRoute(
       path: '/predictor',
-      builder: (context, state) => const PredictorScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const PredictorScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
     GoRoute(
       path: '/exams',
-      builder: (context, state) => const ExamsScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const ExamsScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
     GoRoute(
       path: '/compare',
-      builder: (context, state) => const CompareScreen(),
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        List<College>? initial;
+        if (extra is College) {
+          initial = [extra];
+        } else if (extra is List<College>) {
+          initial = extra;
+        }
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: CompareScreen(initialSelection: initial),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+            return FadeTransition(opacity: curve, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 180),
+        );
+      },
     ),
     GoRoute(
       path: '/select-goal',
-      builder: (context, state) => const GoalLocationSelectorScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const GoalLocationSelectorScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
     GoRoute(
       path: '/college/:id',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
-        return CollegeDetailScreen(collegeId: id);
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: CollegeDetailScreen(collegeId: id),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+            return FadeTransition(opacity: curve, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 180),
+        );
       },
     ),
     // NEW: Profile route
     GoRoute(
       path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const ProfileScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FadeTransition(opacity: curve, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     ),
   ],
 );

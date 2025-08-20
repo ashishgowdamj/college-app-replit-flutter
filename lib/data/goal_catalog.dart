@@ -6,6 +6,21 @@ class GoalCatalog {
     'BCA', 'B.Tech', 'MBA', 'M.Tech', 'MBBS', 'B.Com', 'B.Sc', 'B.Sc (Nursing)'
   ];
 
+  // Additional courses to list under the "All Courses" dropdown in the drawer
+  static const otherCourses = <String>[
+    'B.Arch',
+    'BBA',
+    'BA',
+    'B.Pharm',
+    'BDS',
+    'LLB',
+    'B.Ed',
+    'BHM',
+    'B.Voc',
+    'MCA',
+    'M.Com',
+  ];
+
   static const Map<String, List<String>> specializations = {
     'BCA': [
       'Data Science',

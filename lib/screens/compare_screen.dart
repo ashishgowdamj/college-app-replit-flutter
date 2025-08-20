@@ -4,13 +4,17 @@ import 'package:go_router/go_router.dart';
 import '../services/college_provider.dart';
 import '../models/college.dart';
 import '../widgets/compare_courses_fees_section.dart';
+import '../ui/widgets/shimmer_box.dart';
+import '../ui/design_system.dart';
 
 class CompareScreen extends StatefulWidget {
-  const CompareScreen({super.key});
+  final List<College>? initialSelection;
+  const CompareScreen({super.key, this.initialSelection});
 
   @override
   State<CompareScreen> createState() => _CompareScreenState();
 }
+
 
 class _CompareScreenState extends State<CompareScreen> {
   final List<College> selectedColleges = [];
@@ -35,6 +39,26 @@ class _CompareScreenState extends State<CompareScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // Preload any initial selection passed via route extra
+    final init = widget.initialSelection;
+    if (init != null && init.isNotEmpty) {
+      for (final c in init) {
+        if (selectedColleges.length >= 4) break;
+        final idStr = c.id.toString();
+        if (!selectedCollegeIds.contains(idStr)) {
+          selectedColleges.add(c);
+          selectedCollegeIds.add(idStr);
+        }
+      }
+      // If exactly 1 was provided, encourage user to add another
+      if (selectedColleges.length == 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Added to compare. Pick one more to start comparing.')),
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -83,8 +107,8 @@ class _CompareScreenState extends State<CompareScreen> {
         ),
         body: Consumer<CollegeProvider>(
           builder: (context, provider, child) {
-            if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+            if (provider.isLoading && provider.colleges.isEmpty) {
+              return const _CompareSkeleton();
             }
 
             // Initialize filtered colleges if empty
@@ -1070,6 +1094,70 @@ class _CompareScreenState extends State<CompareScreen> {
         content: Text('Comparing ${selectedColleges.length} colleges'),
         backgroundColor: Colors.green,
       ),
+    );
+  }
+
+  // ─── SKELETON ──────────────────────────────────────────────────────────────
+}
+
+class _CompareSkeleton extends StatelessWidget {
+  const _CompareSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header/search placeholder
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTokens.outline, width: 1),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(color: AppTokens.primary.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              ShimmerBox(height: 40, borderRadius: BorderRadius.all(Radius.circular(12))),
+              SizedBox(height: 12),
+              ShimmerBox(height: 20, width: 160, borderRadius: BorderRadius.all(Radius.circular(8))),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemBuilder: (_, __) => Container(
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTokens.outline, width: 1),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+                  BoxShadow(color: AppTokens.primary.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  ShimmerBox(height: 16, width: 160, borderRadius: BorderRadius.all(Radius.circular(6))),
+                  SizedBox(height: 12),
+                  ShimmerBox(height: 80, borderRadius: BorderRadius.all(Radius.circular(8))),
+                ],
+              ),
+            ),
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemCount: 4,
+          ),
+        ),
+      ],
     );
   }
 }

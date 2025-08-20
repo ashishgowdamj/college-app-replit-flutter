@@ -15,7 +15,9 @@ class CourseCustomizationDrawer extends StatefulWidget {
 }
 
 class _CourseCustomizationDrawerState extends State<CourseCustomizationDrawer> {
-  final TextEditingController _courseSearch = TextEditingController();
+  // Track expanded categories (multiple expansion allowed)
+  final Set<String> _expanded = <String>{};
+  bool _allCoursesExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +33,7 @@ class _CourseCustomizationDrawerState extends State<CourseCustomizationDrawer> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primary, cs.primaryContainer],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: cs.primary,
             ),
             child: Row(
               children: [
@@ -58,21 +56,6 @@ class _CourseCustomizationDrawerState extends State<CourseCustomizationDrawer> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          _InfoPill(
-                            icon: GoalCatalog.goalIcon(profile.preferredCourse),
-                            label: profile.preferredCourse.isEmpty ? 'Select Goal' : profile.preferredCourse,
-                          ),
-                          _InfoPill(
-                            icon: Icons.place,
-                            label: profile.preferredState.isEmpty ? 'Choose Location' : profile.preferredState,
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -89,43 +72,88 @@ class _CourseCustomizationDrawerState extends State<CourseCustomizationDrawer> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
-                // Course search
-                const SizedBox(height: 6),
-                Text('Browse Categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _courseSearch,
-                  decoration: InputDecoration(
-                    hintText: 'Search Courses by Name',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    isDense: true,
-                  ),
-                  onSubmitted: (q) {
-                    final query = q.trim();
-                    if (query.isEmpty) return;
-                    context.read<CollegeProvider>().updateSearchQuery(query);
-                    context.go('/search');
-                  },
-                ),
+                // Selected goals box under the header
+                _SelectedGoalsBox(profile: profile),
                 const SizedBox(height: 12),
 
-                // Categories list
-                ...GoalCatalog.defaultGoals.map((g) => _CategoryTile(
-                      title: g,
-                      icon: GoalCatalog.goalIcon(g),
-                      onTap: () async {
-                        // Navigate to Search prefilled with this goal as query (do not change saved goal here)
-                        context.read<CollegeProvider>().updateSearchQuery(g);
-                        context.go('/search');
-                      },
-                    )),
+                // Section header
+                const SizedBox(height: 6),
+                Text('Browse Categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 12),
 
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  title: const Text('All Courses', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.blue)),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.blue),
-                  onTap: () => context.go('/search'),
+                // Categories list (expand/collapse)
+                ...GoalCatalog.defaultGoals.map((g) {
+                  final expanded = _expanded.contains(g);
+                  return _CategoryExpandable(
+                    title: g,
+                    icon: GoalCatalog.goalIcon(g),
+                    expanded: expanded,
+                    onToggle: () {
+                      setState(() {
+                        if (expanded) {
+                          _expanded.remove(g);
+                        } else {
+                          _expanded.add(g);
+                        }
+                      });
+                    },
+                    onNavigateTopCities: () {
+                      // Prefill query with goal and go to search
+                      context.read<CollegeProvider>().updateSearchQuery(g);
+                      Navigator.of(context).pop();
+                      context.go('/search');
+                    },
+                    onNavigateStreams: () {
+                      // Prefill query with "<goal> streams" and go to search
+                      context.read<CollegeProvider>().updateSearchQuery('$g streams');
+                      Navigator.of(context).pop();
+                      context.go('/search');
+                    },
+                    onNavigatePredictor: () {
+                      Navigator.of(context).pop();
+                      context.go('/predictor');
+                    },
+                  );
+                }),
+
+                // All Courses expandable dropdown
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                        title: const Text('All Courses', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.blue)),
+                        trailing: Icon(_allCoursesExpanded ? Icons.remove : Icons.add, color: Colors.blue),
+                        onTap: () => setState(() => _allCoursesExpanded = !_allCoursesExpanded),
+                      ),
+                      if (_allCoursesExpanded) const Divider(height: 1),
+                      if (_allCoursesExpanded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final c in GoalCatalog.otherCourses)
+                                ActionChip(
+                                  label: Text(c, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  onPressed: () {
+                                    context.read<CollegeProvider>().updateSearchQuery(c);
+                                    Navigator.of(context).pop();
+                                    context.go('/search');
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 12),
@@ -167,30 +195,100 @@ class _CourseCustomizationDrawerState extends State<CourseCustomizationDrawer> {
   }
 }
 
-class _CategoryTile extends StatelessWidget {
+class _CategoryExpandable extends StatelessWidget {
   final String title;
   final IconData icon;
-  final VoidCallback onTap;
-  const _CategoryTile({required this.title, required this.icon, required this.onTap});
+  final bool expanded;
+  final VoidCallback onToggle;
+  final VoidCallback onNavigateTopCities;
+  final VoidCallback onNavigateStreams;
+  final VoidCallback onNavigatePredictor;
+
+  const _CategoryExpandable({
+    required this.title,
+    required this.icon,
+    required this.expanded,
+    required this.onToggle,
+    required this.onNavigateTopCities,
+    required this.onNavigateStreams,
+    required this.onNavigatePredictor,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = Colors.grey[300]!;
+    final primary = Theme.of(context).colorScheme.primary;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: borderColor),
       ),
-      child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        trailing: const Icon(Icons.add),
-        onTap: onTap,
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(icon, color: primary),
+            title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+            trailing: Icon(expanded ? Icons.remove : Icons.add),
+            onTap: onToggle,
+          ),
+          if (expanded) const Divider(height: 1),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: Column(
+                children: [
+                  _SubLink(
+                    title: 'Top Cities & States',
+                    onTap: onNavigateTopCities,
+                  ),
+                  _SubLink(
+                    title: 'Browse By $title Streams',
+                    onTap: onNavigateStreams,
+                  ),
+                  _SubLink(
+                    title: 'College Predictor',
+                    onTap: onNavigatePredictor,
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
 }
+
+class _SubLink extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+  const _SubLink({required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: Row(
+          children: [
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+ 
 
 class _ToolsGrid extends StatelessWidget {
   final void Function(String route) onNavigate;
@@ -265,32 +363,69 @@ class _ToolsGrid extends StatelessWidget {
   }
 }
 
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _InfoPill({required this.icon, required this.label});
+class _SelectedGoalsBox extends StatelessWidget {
+  final UserProfile profile;
+  const _SelectedGoalsBox({required this.profile});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
+    final titleStyle = const TextStyle(color: Colors.white, fontWeight: FontWeight.w800);
+    final pillText = const TextStyle(color: Colors.white, fontWeight: FontWeight.w700);
+    return InkWell(
+      onTap: () => context.push('/select-goal'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F2937), // dark slate
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Selected Goals', style: titleStyle),
+                const Spacer(),
+                Icon(Icons.edit, color: Colors.white70, size: 18),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _pill(icon: GoalCatalog.goalIcon(profile.preferredCourse),
+                    label: profile.preferredCourse.isEmpty ? 'Select Goal' : profile.preferredCourse,
+                    textStyle: pillText,
+                    bg: Colors.white.withOpacity(0.08),
+                    iconColor: Colors.white70),
+                _pill(icon: Icons.place,
+                    label: profile.preferredState.isEmpty ? 'Choose Location' : profile.preferredState,
+                    textStyle: pillText,
+                    bg: Colors.white.withOpacity(0.08),
+                    iconColor: Colors.white70),
+              ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _pill({required IconData icon, required String label, required TextStyle textStyle, required Color bg, required Color iconColor}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white24)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white70, size: 14),
+          Icon(icon, color: iconColor, size: 14),
           const SizedBox(width: 6),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 150),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white70, fontSize: 12.5),
-            ),
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(label, style: textStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
